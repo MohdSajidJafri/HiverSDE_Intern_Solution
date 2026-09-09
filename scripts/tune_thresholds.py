@@ -258,6 +258,7 @@ def main():
             "silver_eval_set_jsonl": get_file_sha256(project_root / "data" / "interim" / "silver_eval_set.jsonl"),
             "silver_val_data_jsonl": get_file_sha256(project_root / "data" / "val" / "dev_tuning.jsonl"),
             "retrieval_corpus_jsonl": get_file_sha256(project_root / "data" / "processed" / "retrieval_corpus.jsonl"),
+            "unselected_multiturn_interactions_jsonl": get_file_sha256(project_root / "data" / "interim" / "unselected_multiturn_interactions.jsonl"),
             "retrieval_index_pkl": get_file_sha256(project_root / "models" / "retrieval_index.pkl"),
             "intent_classifier_pkl": get_file_sha256(project_root / "models" / "intent_classifier.pkl"),
             "dependencies_pyproject_toml": get_file_sha256(project_root / "pyproject.toml"),

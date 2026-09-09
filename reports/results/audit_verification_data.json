@@ -39,6 +39,45 @@
     "clean_retrieval_corpus": 1427,
     "pairwise_leakage_status": "0 overlap across all 6 pairs for tweet IDs, thread IDs, customer author IDs, and author-days"
   },
+  "dataset_accounting_and_reconciliation": {
+    "raw_twcs_records_scanned": 167821,
+    "reconstructed_spotify_interaction_pairs": 2328,
+    "filtered_empty_or_invalid_interactions": 0,
+    "eligible_graph_components": 1352,
+    "partitions": {
+      "gold_candidate_queue": 200,
+      "silver_dev_benchmark": 200,
+      "quarantined_validation_split": 156,
+      "clean_retrieval_corpus": 1427
+    },
+    "subtotal_retained_partitions": 1983,
+    "excluded_groups": [
+      {
+        "group_name": "gold_component_secondary_turns",
+        "count": 190,
+        "reason": "Secondary multi-turn turns within the 200 quarantined Gold components. Excluded from single-turn customer inquiry evaluation queue; quarantined to protect Gold integrity.",
+        "overlap_with_retained_partitions": {
+          "silver_dev_overlap": 0,
+          "validation_overlap": 0,
+          "retrieval_overlap": 0
+        }
+      },
+      {
+        "group_name": "silver_component_secondary_turns",
+        "count": 155,
+        "reason": "Secondary multi-turn turns within the 200 Silver Dev components. Excluded from single-turn evaluation benchmark; quarantined to prevent thread/author leakage into retrieval or validation.",
+        "overlap_with_retained_partitions": {
+          "gold_queue_overlap": 0,
+          "validation_overlap": 0,
+          "retrieval_overlap": 0
+        }
+      }
+    ],
+    "subtotal_excluded": 345,
+    "total_reconciled": 2328,
+    "reconciliation_formula": "200 (Gold) + 200 (Silver Dev) + 156 (Val) + 1427 (Retrieval) + 190 (Gold Excluded) + 155 (Silver Excluded) == 2328",
+    "regression_assertion": "sum(Gold + Silver + Validation + Retrieval + explicitly excluded) == 2328 [PASSED]"
+  },
   "temperature_calibration": {
     "calibrated_temperature_t": 0.7911,
     "label_provenance": "Fitted via L-BFGS NLL minimization on silver-labelled validation split (data/val/dev_tuning.jsonl, N=156); explicitly NOT human gold labels"

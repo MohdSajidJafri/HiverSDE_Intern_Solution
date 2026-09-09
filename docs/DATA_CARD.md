@@ -87,6 +87,44 @@ The dataset of 2,328 reconstructed `@SpotifyCares` interaction pairs is partitio
    - Pairwise Author-Day overlap: **0 across all 6 pairs**
    - Conservative near-duplicate semantic screening ($>0.92$ cosine similarity): audited and documented.
 
+### 6.1 Dataset Accounting & Arithmetic Reconciliation
+
+$$\begin{aligned}
+\text{Raw TWCS records scanned: } & 167,821 \\
+\longrightarrow\quad \text{Reconstructed @SpotifyCares interaction pairs: } & \mathbf{2,328} \\
+\longrightarrow\quad \text{Filtered/empty/invalid interactions: } & \mathbf{0} \\
+\longrightarrow\quad \text{Eligible connected graph components: } & \mathbf{1,352} \\
+\longrightarrow\quad \text{Quarantined Gold Candidate Queue: } & \mathbf{200} \\
+\longrightarrow\quad \text{Silver Development Benchmark: } & \mathbf{200} \\
+\longrightarrow\quad \text{Quarantined Validation Split: } & \mathbf{156} \\
+\longrightarrow\quad \text{Clean Retrieval \& Training Corpus: } & \mathbf{1,427} \\
+\longrightarrow\quad \text{Quarantined Multi-Turn Secondary Turns: } & \mathbf{345} \text{ (190 Gold + 155 Silver Dev)} \\
+\hline
+\text{Final Reconciled Total: } & \mathbf{2,328}
+\end{aligned}$$
+
+#### Audit Table of Partitions & Excluded Groups
+
+| Partition / Group | Components | Records | Purpose & Quarantine Logic | Cross-Split Overlap |
+| :--- | :---: | :---: | :--- | :---: |
+| **Gold Candidate Queue** | 200 | **200** | Primary inquiries held out for human gold annotation | **0** |
+| **Silver Dev Benchmark** | 200 | **200** | Primary inquiries for automated development evaluation | **0** |
+| **Quarantined Validation Split** | 100 | **156** | Temperature scaling ($T=0.7911$) & threshold tuning | **0** |
+| **Clean Retrieval Corpus** | 852 | **1,427** | Dense vector store & classifier training set | **0** |
+| **Subtotal (Retained Across 4 Partitions)** | **1,352** | **1,983** | **Active System Partitions** | **0** |
+| *Excluded Group 1: Gold Secondary Turns* | *(in Gold)* | **190** | Follow-up customer replies in Gold threads (`data/interim/unselected_multiturn_interactions.jsonl`) | **0** (0 with Silver, Val, Ret) |
+| *Excluded Group 2: Silver Dev Secondary Turns* | *(in Silver)* | **155** | Follow-up customer replies in Silver threads (`data/interim/unselected_multiturn_interactions.jsonl`) | **0** (0 with Gold, Val, Ret) |
+| **Subtotal (Quarantined Excluded Records)** | — | **345** | **Quarantined Secondary Multi-Turn Turns** | **0** |
+| **Total Reconciled** | **1,352** | **2,328** | **Reconciled Reconstructed Interactions** | **0** |
+
+$$\text{Reconciliation Formula: } 200 + 200 + 156 + 1,427 + 190 + 155 = \mathbf{2,328}$$
+
+#### Reason for the 345 Excluded Records:
+- **Evaluation Requirement**: Benchmark evaluation and human annotation require single-turn customer inquiries (`comp[0]`) representing initial problem statements.
+- **Component Entanglement**: In multi-turn threads, follow-up messages share the customer author ID and thread context. Moving them into retrieval or validation would violate strict thread/author isolation.
+- **Quarantine Location**: The 190 Gold follow-ups and 155 Silver follow-ups are safely isolated in `data/interim/unselected_multiturn_interactions.jsonl`.
+- **Regression Assertion**: Tested and enforced in `tests/unit/test_four_way_disjointness.py::test_exact_dataset_accounting_reconciliation`.
+
 ---
 
 ## 7. Known Limitations & Bias

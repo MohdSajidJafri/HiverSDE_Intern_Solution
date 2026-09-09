@@ -48,6 +48,9 @@ data/raw/
 
 # Environment Secrets
 .env
+
+# Scratch scripts
+scratch/
 *.key
 *.pem
 secrets.yaml

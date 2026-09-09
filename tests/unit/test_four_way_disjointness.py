@@ -122,3 +122,55 @@ def test_human_retrieval_annotation_queue_structure():
     assert status_data["status"] == "PENDING_HUMAN_ANNOTATION"
     assert status_data["labeled_count"] == 0
     assert status_data["pending_count"] == 150
+
+
+def test_exact_dataset_accounting_reconciliation(dataset_partitions):
+    """
+    Verify exact mathematical reconciliation:
+    sum(Gold + Silver + Validation + Retrieval + explicitly excluded) == reconstructed interaction count (2,328)
+    """
+    unselected_path = project_root / "data" / "interim" / "unselected_multiturn_interactions.jsonl"
+    assert unselected_path.exists(), f"Missing {unselected_path}"
+
+    with open(unselected_path, "r", encoding="utf-8") as f:
+        unselected = [json.loads(line) for line in f]
+
+    gold_count = len(dataset_partitions["gold"])
+    silver_count = len(dataset_partitions["silver"])
+    val_count = len(dataset_partitions["val"])
+    retrieval_count = len(dataset_partitions["retrieval"])
+    unselected_count = len(unselected)
+
+    # 1. Exact partition counts
+    assert gold_count == 200
+    assert silver_count == 200
+    assert val_count == 156
+    assert retrieval_count == 1427
+    assert unselected_count == 345
+
+    # 2. Excluded group counts
+    gold_unselected = [r for r in unselected if r.get("exclusion_group") == "gold_component_secondary_turn"]
+    silver_unselected = [r for r in unselected if r.get("exclusion_group") == "silver_component_secondary_turn"]
+    assert len(gold_unselected) == 190, f"Expected 190 gold secondary turns, got {len(gold_unselected)}"
+    assert len(silver_unselected) == 155, f"Expected 155 silver secondary turns, got {len(silver_unselected)}"
+
+    # 3. Sum matches reconstructed pairs exactly
+    total_reconciled = gold_count + silver_count + val_count + retrieval_count + unselected_count
+    assert total_reconciled == 2328, f"Reconciliation mismatch: {total_reconciled} != 2328"
+
+    # 4. Zero overlap of unselected turns with opposing partitions
+    silver_tweets = {str(r["customer_tweet_id"]) for r in dataset_partitions["silver"]}
+    gold_tweets = {str(r["customer_tweet_id"]) for r in dataset_partitions["gold"]}
+    val_tweets = {str(r["customer_tweet_id"]) for r in dataset_partitions["val"]}
+    ret_tweets = {str(r["customer_tweet_id"]) for r in dataset_partitions["retrieval"]}
+
+    unsel_gold_tweets = {str(r["customer_tweet_id"]) for r in gold_unselected}
+    unsel_silver_tweets = {str(r["customer_tweet_id"]) for r in silver_unselected}
+
+    assert len(unsel_gold_tweets.intersection(silver_tweets)) == 0, "Leakage: unselected gold turn overlaps with silver dev!"
+    assert len(unsel_gold_tweets.intersection(val_tweets)) == 0, "Leakage: unselected gold turn overlaps with validation!"
+    assert len(unsel_gold_tweets.intersection(ret_tweets)) == 0, "Leakage: unselected gold turn overlaps with retrieval!"
+
+    assert len(unsel_silver_tweets.intersection(gold_tweets)) == 0, "Leakage: unselected silver turn overlaps with gold queue!"
+    assert len(unsel_silver_tweets.intersection(val_tweets)) == 0, "Leakage: unselected silver turn overlaps with validation!"
+    assert len(unsel_silver_tweets.intersection(ret_tweets)) == 0, "Leakage: unselected silver turn overlaps with retrieval!"

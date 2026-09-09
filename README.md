@@ -200,10 +200,12 @@ Evaluated on the frozen silver development evaluation benchmark ($N=200$ real cu
 │   └── evaluate_judge_agreement.py   # Runs human vs LLM judge agreement study
 │
 ├── data/
-│   ├── gold/gold_messages.jsonl      # Single frozen gold dataset (200 records)
-│   ├── val/dev_tuning.jsonl          # Validation tuning split (60 records)
-│   ├── interim/intent_clusters.json  # Discovered cluster intermediate artifact
-│   └── processed/retrieval_corpus.jsonl # 2,268 clean historical Spotify pairs
+│   ├── gold/gold_annotation_queue.jsonl # Quarantined human gold annotation queue (200 records)
+│   ├── interim/silver_eval_set.jsonl    # Silver development benchmark (200 records, also gold_messages.jsonl)
+│   ├── interim/unselected_multiturn_interactions.jsonl # Quarantined multi-turn turns (345 records: 190 Gold + 155 Silver)
+│   ├── val/dev_tuning.jsonl             # Quarantined validation tuning split (156 records, 100 components)
+│   ├── interim/intent_clusters.json     # Discovered cluster intermediate artifact
+│   └── processed/retrieval_corpus.jsonl # 1,427 clean historical Spotify pairs (852 components)
 │
 ├── models/
 │   ├── freeze_manifest.json          # Cryptographic freeze manifest (hashes & config)

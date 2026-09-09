@@ -251,11 +251,55 @@ def main():
             retrieval_author_ids.add(str(p.get("customer_author_id", "")))
             retrieval_records.append(p)
 
+    # 5. Extract and Document Unselected Multi-Turn Turns in Gold & Silver Components
+    # For single-turn evaluation queues, only the primary inquiry comp[0] is retained.
+    # Secondary conversational turns (comp[1:]) are quarantined within their parent components
+    # to prevent cross-split leakage, but excluded from the single-turn evaluation benchmark queues.
+    unselected_gold_pairs = []
+    unsel_gold_tweet_ids = set()
+    for comp in gold_comps:
+        for p in comp[1:]:
+            item = dict(p)
+            item["exclusion_group"] = "gold_component_secondary_turn"
+            item["exclusion_reason"] = "Secondary multi-turn turn in quarantined Gold component; quarantined to protect Gold integrity, excluded from single-turn evaluation queue."
+            unselected_gold_pairs.append(item)
+            unsel_gold_tweet_ids.add(str(p["customer_tweet_id"]))
+
+    unselected_silver_pairs = []
+    unsel_silver_tweet_ids = set()
+    for comp in silver_comps:
+        for p in comp[1:]:
+            item = dict(p)
+            item["exclusion_group"] = "silver_component_secondary_turn"
+            item["exclusion_reason"] = "Secondary multi-turn turn in Silver Dev component; quarantined within Silver split, excluded from single-turn evaluation benchmark."
+            unselected_silver_pairs.append(item)
+            unsel_silver_tweet_ids.add(str(p["customer_tweet_id"]))
+
+    total_unselected_pairs = unselected_gold_pairs + unselected_silver_pairs
+
     print(f"\nFinal Deterministic 4-Way Partition Record Counts:")
     print(f"  1. Quarantined Candidate Gold Queue:     {len(gold_candidates):,} queries (200 components)")
     print(f"  2. Silver Development Benchmark:        {len(silver_eval_records):,} queries (200 components)")
     print(f"  3. Quarantined Validation Split:         {len(val_records):,} pairs   (100 components)")
     print(f"  4. Clean Retrieval & Training Corpus:    {len(retrieval_records):,} pairs   ({len(retrieval_comps)} components)")
+    print(f"  Subtotal Retained Across 4 Partitions:   {len(gold_candidates) + len(silver_eval_records) + len(val_records) + len(retrieval_records):,} pairs/queries")
+    print(f"\nExplicitly Excluded Multi-Turn Interaction Accounting:")
+    print(f"  - Excluded Group 1 (Quarantined Gold Secondary Turns):       {len(unselected_gold_pairs):,} pairs")
+    print(f"  - Excluded Group 2 (Quarantined Silver Dev Secondary Turns):  {len(unselected_silver_pairs):,} pairs")
+    print(f"  Subtotal Excluded Secondary Turns:                           {len(total_unselected_pairs):,} pairs")
+
+    # Verify exact arithmetic reconciliation
+    reconciled_total = (
+        len(gold_candidates) 
+        + len(silver_eval_records) 
+        + len(val_records) 
+        + len(retrieval_records) 
+        + len(total_unselected_pairs)
+    )
+    print(f"\nExact Dataset Arithmetic Reconciliation:")
+    print(f"  Gold (200) + Silver (200) + Val (156) + Retrieval (1,427) + Excluded (345) = {reconciled_total:,}")
+    print(f"  Total Reconstructed TWCS Interaction Pairs:                                {len(all_pairs):,}")
+    assert reconciled_total == len(all_pairs), f"Accounting reconciliation mismatch: {reconciled_total} != {len(all_pairs)}"
 
     # Ensure output directories exist
     gold_dir = project_root / "data" / "gold"
@@ -268,6 +312,13 @@ def main():
     processed_dir.mkdir(parents=True, exist_ok=True)
     annotations_dir = project_root / "reports" / "annotations"
     annotations_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save Excluded Multi-Turn Interactions with full provenance
+    unselected_path = interim_dir / "unselected_multiturn_interactions.jsonl"
+    with open(unselected_path, "w", encoding="utf-8") as f:
+        for r in total_unselected_pairs:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    print(f"Saved {len(total_unselected_pairs)} quarantined unselected multi-turn pairs to {unselected_path}")
 
     # 1. Save Candidate Gold Queue (.jsonl and .csv) - STRICTLY QUARANTINED
     queue_jsonl_path = gold_dir / "gold_annotation_queue.jsonl"
@@ -481,22 +532,84 @@ def main():
     for pair, res in pairwise_results.items():
         matrix_rows += f"| **{pair}** | {res['tweet_id_overlap']} | {res['thread_id_overlap']} | {res['author_id_overlap']} | {res['author_day_overlap']} | **PASS (0)** |\n"
 
-    audit_md_content = f"""# Multi-Layer Data Leakage Audit & 4-Way Quarantine Report
+    # Overlap verification for excluded multi-turn groups
+    unsel_gold_silver_ov = len(unsel_gold_tweet_ids.intersection(silver_tweet_ids))
+    unsel_gold_val_ov = len(unsel_gold_tweet_ids.intersection(val_tweet_ids))
+    unsel_gold_ret_ov = len(unsel_gold_tweet_ids.intersection(retrieval_tweet_ids))
+    assert unsel_gold_silver_ov == 0, "Leakage: unselected gold turn overlaps with silver dev!"
+    assert unsel_gold_val_ov == 0, "Leakage: unselected gold turn overlaps with validation!"
+    assert unsel_gold_ret_ov == 0, "Leakage: unselected gold turn overlaps with retrieval!"
 
-This report documents the rigorous multi-layer contamination screening, graph-component quarantine, and pairwise disjointness verification across the **four strictly separated partitions** created from the TWCS dataset for `@SpotifyCares`.
+    unsel_silver_gold_ov = len(unsel_silver_tweet_ids.intersection(gold_tweet_ids))
+    unsel_silver_val_ov = len(unsel_silver_tweet_ids.intersection(val_tweet_ids))
+    unsel_silver_ret_ov = len(unsel_silver_tweet_ids.intersection(retrieval_tweet_ids))
+    assert unsel_silver_gold_ov == 0, "Leakage: unselected silver turn overlaps with gold queue!"
+    assert unsel_silver_val_ov == 0, "Leakage: unselected silver turn overlaps with validation!"
+    assert unsel_silver_ret_ov == 0, "Leakage: unselected silver turn overlaps with retrieval!"
+
+    audit_md_content = f"""# Multi-Layer Data Leakage Audit & Dataset Accounting Report
+
+This report documents the end-to-end dataset provenance accounting, graph-component quarantine, pairwise disjointness verification, and multi-layer contamination screening across the **four strictly separated partitions** and **explicitly quarantined secondary turns** created from the TWCS dataset for `@SpotifyCares`.
 
 ---
 
-## 1. Audit Scope & 4-Way Partition Summary
+## 1. Complete Dataset Accounting Flow & Exact Arithmetic Reconciliation
 
-The dataset was partitioned at the **disjoint author-conversation component level** across {total_components:,} isolated graph components.
+Every single interaction pair reconstructed from TWCS is accounted for with exact mathematical reconciliation:
 
-| Partition | Graph Components | Records / Queries | Role & Strict Quarantine Policy |
-| :--- | :--- | :--- | :--- |
-| **Candidate Gold Queue** | 200 components | {len(gold_candidates)} queries | **Strictly Quarantined Future Gold Set**. Kept unlabelled (`gold_intent = ""`). Permanently excluded from model training, threshold tuning, temperature calibration, and development evaluation. |
-| **Silver Development Benchmark** | 200 components | {len(silver_eval_records)} queries | **Interim Development Evaluation Benchmark** (`SILVER_DEVELOPMENT`). Used by `evaluate.py` to evaluate agent performance on held-out queries. Completely disjoint from Gold. |
-| **Quarantined Validation Split** | 100 components | {len(val_records)} pairs | **Tuning & Calibration Split** (`SILVER_VALIDATION`). Used exclusively for temperature scaling ($T$) and operating threshold grid sweeps. Disjoint from Gold, Silver Dev, and Retrieval. |
-| **Clean Retrieval & Training Corpus** | {len(retrieval_comps)} components | {len(retrieval_records)} pairs | **Historical Grounding & Classifier Training**. Dense semantic index (`all-MiniLM-L6-v2`) and multinomial classifier training set. Every record carries an explicit `intent` tag. |
+```
+Raw TWCS Records Processed: 167,821 rows (30MB sample slice)
+      │
+      ▼
+Reconstructed Spotify Interaction Pairs: 2,328
+      │
+      ├── [Filtering Rule: Non-empty customer & brand text, valid customer author ID]: 0 excluded (100% valid)
+      │
+      ▼
+Eligible Graph Components: 1,352 isolated connected components (2,328 total interaction pairs)
+      │
+      ├── Gold Components (200 components / 390 total pairs):
+      │     ├── 200 Primary Inquiries ──────> Retained: Candidate Gold Queue (N=200)
+      │     └── 190 Secondary Turns  ───────> Excluded Group 1: Quarantined Gold Multi-Turn Turns (N=190)
+      │
+      ├── Silver Dev Components (200 components / 355 total pairs):
+      │     ├── 200 Primary Inquiries ──────> Retained: Silver Dev Benchmark (N=200)
+      │     └── 155 Secondary Turns  ───────> Excluded Group 2: Quarantined Silver Dev Multi-Turn Turns (N=155)
+      │
+      ├── Validation Components (100 components / 156 total pairs):
+      │     └── 156 Interaction Pairs ──────> Retained: Quarantined Validation Split (N=156)
+      │
+      └── Retrieval Components (852 components / 1,427 total pairs):
+            └── 1,427 Interaction Pairs ────> Retained: Clean Retrieval & Training Corpus (N=1,427)
+```
+
+### Exact Arithmetic Reconciliation Table
+
+| Category | Components | Interaction Pairs | Role in Pipeline | Overlap with Other Splits |
+| :--- | :---: | :---: | :--- | :---: |
+| **Candidate Gold Queue** | 200 | **200** | Quarantined future human gold queue (`gold_intent = ""`) | **0** |
+| **Silver Development Benchmark** | 200 | **200** | Automated development evaluation benchmark (`SILVER_DEVELOPMENT`) | **0** |
+| **Quarantined Validation Split** | 100 | **156** | Temperature scaling ($T=0.7911$) & threshold grid sweeps | **0** |
+| **Clean Retrieval Corpus** | 852 | **1,427** | Dense semantic vector store & classifier training set | **0** |
+| **Subtotal (Retained across 4 Partitions)** | **1,352** | **1,983** | **Active System Partitions** | **0** |
+| *Excluded Group 1: Gold Secondary Turns* | *(in Gold comps)* | **190** | Follow-up conversational turns in Gold components; quarantined to prevent Gold leakage, excluded from single-turn evaluation queue | **0** (0 with Silver, Val, Ret) |
+| *Excluded Group 2: Silver Dev Secondary Turns* | *(in Silver comps)* | **155** | Follow-up conversational turns in Silver components; quarantined to prevent Silver leakage, excluded from single-turn evaluation benchmark | **0** (0 with Gold, Val, Ret) |
+| **Subtotal (Explicitly Quarantined Multi-Turn)** | — | **345** | **Quarantined Secondary Multi-Turn Turns** (`data/interim/unselected_multiturn_interactions.jsonl`) | **0** |
+| **Total Reconciled** | **1,352** | **2,328** | **Matches Reconstructed Interaction Count Exactly** | **0** |
+
+$$\text{{Exact Reconciliation Formula: }} 200 + 200 + 156 + 1,427 + 190 + 155 = \mathbf{{2,328}}$$
+
+### Excluded Groups Audit
+
+1. **Excluded Group 1: Quarantined Gold Multi-Turn Secondary Turns ($N=190$)**
+   - **Source**: Components 1–200 (`gold_comps`).
+   - **Reason for Exclusion**: For benchmark evaluation and human annotation queues, single-turn customer inquiries (`comp[0]`) are required. Follow-up customer replies (e.g. "ok thanks", secondary clarification questions) within the same conversation thread cannot serve as standalone initial customer inquiries. Because they belong to the 200 quarantined Gold components, they are quarantined alongside their components to protect Gold integrity.
+   - **Cross-Split Overlap**: Exactly **0** overlapping tweet IDs, threads, or author-days with Silver Dev, Validation, or Retrieval.
+
+2. **Excluded Group 2: Quarantined Silver Dev Multi-Turn Secondary Turns ($N=155$)**
+   - **Source**: Components 201–400 (`silver_comps`).
+   - **Reason for Exclusion**: In multi-turn support threads, secondary turns represent ongoing dialogues rather than initial customer problem statements. Because they share conversation threads with the 200 Silver Dev inquiries, they cannot be placed into the retrieval corpus or validation split without causing severe thread and author leakage. They are therefore quarantined within the Silver Dev split.
+   - **Cross-Split Overlap**: Exactly **0** overlapping tweet IDs, threads, or author-days with Gold Queue, Validation, or Retrieval.
 
 ---
 

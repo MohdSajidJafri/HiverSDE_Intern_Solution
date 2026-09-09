@@ -1,7 +1,7 @@
 {
   "freeze_status": "FROZEN",
   "freeze_timestamp": "2026-09-09T15:45:00Z",
-  "git_commit_sha": "f83ab8c8117be54356d67dc019e519a889d99f27",
+  "git_commit_sha": "1d09e5d40ef86c737c5ede6dca9f629147c4c6dc",
   "dataset_provenance": {
     "source": "Customer Support on Twitter (twcs.csv)",
     "source_url": "https://huggingface.co/datasets/SunidhiSriram/twcs/resolve/main/twcs.csv",
@@ -15,6 +15,7 @@
     "silver_eval_set_jsonl": "e5890fd53022dcbf968c75a245838f211391ec36cd0ce00631ac180be2b59e18",
     "silver_val_data_jsonl": "bda240a9aa219628882583074f8f44952009b63de7e6cea7d7fa007c1720bc69",
     "retrieval_corpus_jsonl": "1193382644472736a43be61e92a84f824b261b8be305a254b971f90f5c8bbed1",
+    "unselected_multiturn_interactions_jsonl": "79adcfd6465b192f51564fe26644557f43a25ca44c2d354ec58c22f5c21ad31c",
     "retrieval_index_pkl": "281bad9686a52068e49e7a2ee8e6453748ab258a8be38cdb05170220f23de614",
     "intent_classifier_pkl": "493957fde23e2c9b5abd9c9719eafb9a04b63938889eeadb820cfda8b8d1320f",
     "dependencies_pyproject_toml": "f0013ab599f86fbad36feeee32634a3f94b5e15d0edb47a90be9a7f9476b946a",

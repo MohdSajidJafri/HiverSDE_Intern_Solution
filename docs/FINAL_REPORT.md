@@ -106,6 +106,53 @@ The architecture consists of modular, testable components externalized via `conf
   - Tweet ID overlap: **0 across all 6 pairs**; Thread ID overlap: **0 across all 6 pairs**; Author ID overlap: **0 across all 6 pairs**.
 - **Pre-Evaluation Freeze**: All parameters locked in `models/freeze_manifest.json` prior to running evaluation.
 
+### 5.1 Dataset Accounting & Arithmetic Reconciliation
+
+To guarantee strict methodological integrity and transparent provenance, every single reconstructed customer support interaction is accounted for through an audited data pipeline:
+
+$$\begin{aligned}
+\text{Raw TWCS records scanned: } & 167,821 \\
+\longrightarrow\quad \text{Reconstructed @SpotifyCares interaction pairs: } & \mathbf{2,328} \\
+\longrightarrow\quad \text{Filtered/empty/invalid interactions: } & \mathbf{0} \\
+\longrightarrow\quad \text{Eligible connected graph components: } & \mathbf{1,352} \\
+\longrightarrow\quad \text{Quarantined Gold Candidate Queue: } & \mathbf{200} \text{ (initial inquiries)} \\
+\longrightarrow\quad \text{Silver Development Benchmark: } & \mathbf{200} \text{ (initial inquiries)} \\
+\longrightarrow\quad \text{Quarantined Validation Split: } & \mathbf{156} \text{ (100 components)} \\
+\longrightarrow\quad \text{Clean Retrieval \& Training Corpus: } & \mathbf{1,427} \text{ (852 components)} \\
+\longrightarrow\quad \text{Quarantined Multi-Turn Secondary Turns: } & \mathbf{345} \text{ (190 Gold + 155 Silver Dev)} \\
+\hline
+\text{Final Reconciled Total: } & \mathbf{2,328} \text{ (Exact Match)}
+\end{aligned}$$
+
+#### Comprehensive Accounting & Exclusion Table
+
+| Stage / Category | Graph Components | Records / Pairs | Purpose & Operational Role | Cross-Split Overlap |
+| :--- | :---: | :---: | :--- | :---: |
+| **Raw TWCS Sample Scanned** | — | 167,821 | Raw tweet records streamed from `twcs.csv` | N/A |
+| **Reconstructed Interactions** | 1,352 | 2,328 | Directional Customer $\to$ Brand interaction pairs | N/A |
+| **Filtered / Invalid Pairs** | 0 | 0 | Zero pairs dropped due to malformed text or missing IDs | N/A |
+| **Quarantined Gold Queue** | 200 | **200** | Reserved for future human gold annotations (`gold_intent = ""`) | **0** |
+| **Silver Dev Benchmark** | 200 | **200** | Automated development benchmark (`SILVER_DEVELOPMENT`) | **0** |
+| **Quarantined Validation Split** | 100 | **156** | Temperature scaling ($T=0.7911$) & threshold grid sweeps | **0** |
+| **Clean Retrieval Corpus** | 852 | **1,427** | Dense vector store & classifier training set | **0** |
+| **Subtotal (Retained in 4 Partitions)** | **1,352** | **1,983** | **Active System Partitions** | **0** |
+| *Excluded Group 1: Gold Secondary Turns* | *(in Gold comps)* | **190** | Quarantined multi-turn follow-ups in Gold threads | **0** (0 with Silver, Val, Ret) |
+| *Excluded Group 2: Silver Secondary Turns* | *(in Silver comps)* | **155** | Quarantined multi-turn follow-ups in Silver threads | **0** (0 with Gold, Val, Ret) |
+| **Subtotal (Quarantined Exclusions)** | — | **345** | Persisted in `data/interim/unselected_multiturn_interactions.jsonl` | **0** |
+| **Final Reconciled Total** | **1,352** | **2,328** | **Exact Arithmetic Reconciliation** | **0** |
+
+$$\mathbf{200 + 200 + 156 + 1,427 + 190 + 155 = 2,328}$$
+
+#### Explanation of the 345-Record Difference:
+1. **Source of Excluded Records**: For single-turn evaluation queues (Gold candidate queue and Silver Dev benchmark), only the primary initial customer inquiry (`comp[0]`) is selected so that each benchmark test case represents a self-contained customer request.
+2. **Quarantine Logic**: Multi-turn customer follow-ups (e.g. "thanks, that worked", "still not seeing it") share the same conversation thread, author ID, and timestamp context as the retained primary inquiries.
+   - The 200 Gold components contain **390** total pairs: **200** primary inquiries retained + **190** secondary turns excluded.
+   - The 200 Silver Dev components contain **355** total pairs: **200** primary inquiries retained + **155** secondary turns excluded.
+   - Total secondary turns = $190 + 155 = \mathbf{345}$.
+3. **Prevention of Data Leakage**: If these 345 secondary turns were placed into the retrieval corpus or validation split, they would leak conversation context and author history into training/retrieval. Therefore, they are quarantined within their respective partitions and excluded from the single-turn evaluation benchmark.
+4. **Leakage Verification**: Cross-split overlap is verified to be **exactly 0** across all tweet IDs, thread IDs, customer author IDs, and author-days.
+5. **Automated Assertion**: Tested and verified in `tests/unit/test_four_way_disjointness.py::test_exact_dataset_accounting_reconciliation`.
+
 ---
 
 ## 6. Empirical Results vs Baselines
