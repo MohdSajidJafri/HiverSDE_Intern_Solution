@@ -218,8 +218,15 @@ To avoid fabricating human scores, the agreement study between the LLM Judge and
 
 ## 9. Headline Number Caveats Summary
 
-- **Confidence Intervals**: With $N=200$, observed accuracy of 56.5% has a 95% confidence interval of **[49.3%, 63.5%]**.
-- **The Escalation Trade-off**: The 0.0% False Auto-Handle Rate on sensitive issues was achieved by adopting a strictly conservative escalation posture (98% escalation on the edge-case heavy gold set). Real production auto-handle coverage on clean, unambiguous technical traffic is ~30–40%.
+- **Confidence Intervals**: With $N=200$, observed Stratified Accuracy of **62.5%** has a 95% confidence interval of **[55.6%, 68.9%]** using the Wilson score interval with continuity correction (**[55.8%, 69.2%]** using the standard Wald normal approximation with $SE = \sqrt{\frac{p(1-p)}{n}} = 3.42\%, z=1.96$).
+- **The Escalation Trade-off**: High safety on sensitive categories (only **1** sensitive false auto-handle out of 47 sensitive queries = **2.1%**; **4.0%** false auto-handle rate overall) was achieved through an intentionally conservative escalation posture (**84.5%** escalation rate on the Gold benchmark, yielding **11.5%** safe auto-handle coverage). In production on clean, unambiguous technical traffic, auto-handle coverage is ~25–35%.
+- **Final Official Gold Metric Summary ($N=200$)**:
+  - Stratified Accuracy: **62.5%** | Macro F1: **33.61%**
+  - Natural Distribution Accuracy: **77.31%** | Weighted F1: **80.82%**
+  - Calibration: ECE = **0.1070** | Brier Score = **0.5212** (Calibrated $T=0.7911$; no gold data used in calibration)
+  - Safety: Escalation Rate = **84.5%** | Safe Auto-Handle Coverage = **11.5%** | False Auto-Handle Rate = **4.0%** (1 sensitive)
+  - Retrieval: Proxy Hit@1 = **58.0%** | Proxy Hit@3 = **71.0%** | Proxy MRR = **0.6358** | Threshold Coverage ($\ge 0.45$) = **92.0%**
+  - Grounding: Unsupported-Claim Rate = **0.0%** | Grounded-Response Rate = **100.0%**
 - **Public Forum Bias**: Twitter support data reflects public triage where account actions must be redirected to private DMs.
 - **Temporal Drift**: 2017 support tweets reference iOS 11 and Windows Phone; while the methodology is sound, the underlying historical guidance is chronologically aged.
 

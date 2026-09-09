@@ -1,19 +1,20 @@
 # What is Misleading About My Headline Number?
 
 ## Executive Summary
-In our evaluation report, the headline metrics on the 200-sample Silver Development Benchmark show:
-- **Intent Accuracy**: **75.0%** (Stratified) / **90.5%** (Natural Distribution View)
-- **Macro F1**: **45.0%** (Stratified) / **90.1%** (Natural Distribution View)
-- **False Auto-Handle Rate on Sensitive Issues**: **0.0%** on validation tuning (0.5% overall on silver benchmark: 1/200)
-- **Escalation Rate**: **85.5%**
-- **Safe Auto-Handle Coverage**: **14.0%**
-- **Proxy Retrieval Hit@1**: **63.5%** *(Intent-consistent proxy)*
-- **Proxy Retrieval Hit@3**: **83.0%** *(Intent-consistent proxy)*
-- **Proxy Mean Reciprocal Rank (MRR)**: **0.7258** *(Intent-consistent proxy)*
-- **Threshold Coverage Diagnostic (Sim $\ge$ 0.45)**: **91.0%** *(Retrieval-score diagnostic)*
+In our evaluation report, the official headline metrics on the 200-sample Human Gold Benchmark show:
+- **Intent Accuracy**: **62.5%** (Stratified) / **77.31%** (Natural Distribution View)
+- **Macro F1**: **33.61%** (Stratified) / **80.82%** (Weighted F1 Natural View)
+- **False Auto-Handle Rate on Sensitive Issues**: **2.1%** (1/47 sensitive queries; 4.0% overall: 8/200)
+- **Escalation Rate**: **84.5%**
+- **Safe Auto-Handle Coverage**: **11.5%**
+- **Proxy Retrieval Hit@1**: **58.0%** *(Intent-consistent proxy)*
+- **Proxy Retrieval Hit@3**: **71.0%** *(Intent-consistent proxy)*
+- **Proxy Mean Reciprocal Rank (MRR)**: **0.6358** *(Intent-consistent proxy)*
+- **Threshold Coverage Diagnostic (Sim $\ge$ 0.45)**: **92.0%** *(Retrieval-score diagnostic)*
 - **Unsupported-Claim Rate**: **0.0%**
+- **Grounded-Response Rate**: **100.0%**
 
-While these numbers substantially outperform the trivial baseline (5.5% accuracy, 23.5% false auto-handle rate) and simple baseline (60.0% accuracy, 3.5% false auto-handle rate), **presenting these headline metrics without rigorous methodological caveats would be fundamentally misleading.**
+While these numbers substantially outperform the trivial baseline (1.0% accuracy, 37.0% false auto-handle rate) and simple baseline (59.5% accuracy, 9.0% false auto-handle rate), **presenting these headline metrics without rigorous methodological caveats would be fundamentally misleading.**
 
 This document details the critical limitations, trade-offs, and external validity caveats that every hiring evaluator and ML practitioner must understand.
 
@@ -21,42 +22,41 @@ This document details the critical limitations, trade-offs, and external validit
 
 ## 1. Intent-Consistent Retrieval Relevance Proxy vs True Human Ground Truth
 - **The Caveat**:
-  The retrieval metrics (Proxy Hit@1: 63.5%, Proxy Hit@3: 83.0%, Proxy MRR: 0.7258) are evaluated using the rule:
+  The retrieval metrics (Proxy Hit@1: 58.0%, Proxy Hit@3: 71.0%, Proxy MRR: 0.6358) are evaluated using the rule:
   $$\text{is\_relevant}(e, q) = (e.\text{intent} == q.\text{true\_intent}) \land (\text{len}(e.\text{brand\_reply}) > 10)$$
 - **Why It Must NOT Be Called "Independently Grounded Relevance"**:
-  1. $q.\text{true\_intent}$ in the Silver Development set is still pseudo/silver-labelled via rule-based heuristics.
-  2. Matching intent does not guarantee that the retrieved interaction actually solves the specific issue described by the customer.
-  3. $\text{len}(\text{brand\_reply}) > 10$ only proves the presence of text, not its accuracy, relevance, or resolution quality.
-  4. True human retrieval relevance evaluation requires manual review. We have created the unlabelled queue of 50 queries $\times$ 3 candidates (`reports/annotations/retrieval_relevance_annotation_queue.jsonl`), but its status remains `PENDING_HUMAN_ANNOTATION`. We refuse to fabricate human labels.
+  1. Matching intent does not guarantee that the retrieved interaction actually solves the specific issue described by the customer.
+  2. $\text{len}(\text{brand\_reply}) > 10$ only proves the presence of text, not its accuracy, relevance, or resolution quality.
+  3. True human retrieval relevance evaluation requires manual review. We have created the unlabelled queue of 50 queries $\times$ 3 candidates (`reports/annotations/retrieval_relevance_annotation_queue.jsonl`), but its status remains `PENDING_HUMAN_ANNOTATION`. We refuse to fabricate human labels.
 
 ---
 
 ## 2. Class Distribution Disparity & The Two Evaluation Views
 - **The Caveat**:
-  The **Stratified View** evaluates raw unweighted performance across all 10 classes. In real TWCS support traffic, however, classes are heavily skewed: `other_unsupported` accounts for 44.5% of queries, `subscription_billing` accounts for 15.5%, while `service_status_outage` accounts for only 0.5% (1 example).
+  The **Stratified View** evaluates raw unweighted performance across all 10 classes. In real TWCS support traffic, however, classes are heavily skewed: `other_unsupported` accounts for 54.0% of human gold queries ($N=108$), `subscription_billing` accounts for 15.0% ($N=30$), while `service_status_outage` ($N=9$) and `device_connectivity` ($N=1$) are rare.
 - **Why It Misleads**:
-  - The unweighted Macro F1 treats `service_status_outage` (F1: 0.0) and `feature_request_ui` (F1: 0.0) as having equal weight to `subscription_billing` (F1: 83.3%) and `other_unsupported` (F1: 79.8%). This pulls down the headline Stratified F1 to 45.0%, obscuring the model's strong capability on high-volume operational categories.
-  - Conversely, weighting by natural traffic inflates the Natural F1 to 90.1%, which conceals the fact that minority classes with few training examples are frequently misclassified into dominant clusters. Neither number tells the full story alone.
+  - The unweighted Macro F1 treats `service_status_outage` (F1: 0.0) and `feature_request_ui` (F1: 0.0) as having equal weight to `subscription_billing` (F1: 62.3%) and `other_unsupported` (F1: 74.9%). This pulls down the headline Stratified Macro F1 to 33.61%, obscuring the model's capability on high-volume operational categories.
+  - Conversely, weighting by natural traffic lifts the Natural Accuracy to 77.31% and Weighted F1 to 80.82%, reflecting realistic traffic but concealing that minority classes are frequently misclassified into the dominant `other_unsupported` class. Neither number tells the full story alone.
 
 ---
 
-## 2. Evaluation Set Provenance & Statistical Uncertainty
+## 3. Evaluation Set Provenance & Statistical Uncertainty
 - **The Caveat**:
-  The benchmark consists of **200 real Twitter customer inquiries** (`SILVER_DEVELOPMENT_BENCHMARK`). Official gold candidate inquiries (`data/gold/gold_annotation_queue.jsonl`) remain pending manual human annotation.
+  The benchmark consists of **200 real Twitter customer inquiries** (`GOLD_HUMAN`) hand-annotated by a human evaluator across all 10 intents.
 - **Statistical Reality**:
-  - For rare classes with support $N \le 6$ (e.g. `app_crash_technical`, `device_connectivity`), small sample counts limit statistical power.
-  - A 95% Clopper-Pearson binomial confidence interval around observed accuracy of 72.5% with $N=200$ spans **[65.8%, 78.5%]**.
+  - For rare classes with support $N \le 6$ (e.g. `playback_issues` $N=2$, `offline_downloads` $N=1$, `device_connectivity` $N=1$, `playlist_library` $N=6$), small sample counts limit statistical power.
+  - A 95% Wilson score confidence interval around observed Stratified Accuracy of 62.5% with $N=200$ spans **[55.6%, 68.9%]** (**[55.8%, 69.2%]** via standard Wald normal approximation with $SE = 3.42\%, z=1.96$).
   - Performance should be interpreted as a confidence band rather than an exact point estimate.
 
 ---
 
-## 3. The Automation-vs-Safety Escalation Trade-off
-- **The Headline**: *"1.0% False Auto-Handle Rate overall, with 0 sensitive false auto-handles during validation tuning."*
+## 4. The Automation-vs-Safety Escalation Trade-off
+- **The Headline**: *"4.0% False Auto-Handle Rate overall, with only 1 sensitive false auto-handle out of 47 sensitive queries (2.1%)."*
 - **What is Misleading**:
-  - Achieving this high safety standard required setting authoritative thresholds $\tau_{\text{conf}}=0.45, \tau_{\text{qual}}=0.45$, which results in an **85.5% escalation rate**.
-  - Safe auto-handling coverage is **13.5%**.
+  - Achieving this high safety standard required setting authoritative thresholds $\tau_{\text{conf}}=0.45, \tau_{\text{qual}}=0.45$, which results in an **84.5% escalation rate**.
+  - Safe auto-handling coverage is **11.5%**.
   - If a team attempts to aggressively force a 50%+ auto-handling rate without better classification representations, false auto-handles on complex issues escalate rapidly.
-  - We explicitly report this 85.5% escalation rate as an inherent policy and model trade-off: safety is prioritized over ungrounded automation.
+  - We explicitly report this 84.5% escalation rate as an inherent policy and model trade-off: safety is prioritized over ungrounded automation.
 
 ---
 

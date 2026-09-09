@@ -127,16 +127,17 @@ This walkthrough documents the step-by-step implementation, empirical milestones
 - **Status**: Completed
 - **Scripts**: `evaluate.py`, `scripts/evaluate_judge_agreement.py`
 - **Artifacts**: `reports/results/evaluation_results.json`, `reports/results/baseline_comparison.json`, `reports/results/human_vs_judge_agreement.json`
-- **Benchmark Summary ($N=200$ Frozen Gold Set)**:
-  | Metric | Primary Agent | Baseline 2 (Simple) | Baseline 1 (Trivial) |
+- **Benchmark Summary ($N=200$ Official Human Gold Set)**:
+  | Metric | Primary Agent (Frozen) | Baseline 2 (Simple) | Baseline 1 (Trivial) |
   | :--- | :--- | :--- | :--- |
-  | **Stratified Accuracy** | **56.5%** | 22.5% | 10.0% |
-  | **Stratified Macro F1** | **55.0%** | 19.5% | 1.8% |
-  | **Natural Weighted F1** | **65.8%** | 20.0% | 5.5% |
-  | **ECE (Calibration Error)** | **0.0724** | 0.2779 | 0.9000 |
-  | **False Auto-Handle Rate** | **0.0%** | 7.0% | 26.5% |
-  | **Unsupported-Claim Rate** | **0.0%** | N/A | N/A |
-  | **Escalation Coverage** | 98.0% | 5.0% | 0.0% |
+  | **Stratified Accuracy** | **62.5%** | 59.5% | 1.0% |
+  | **Stratified Macro F1** | **33.6%** | 17.1% | 0.2% |
+  | **Natural Weighted F1** | **80.8%** | 84.8% | 0.0% |
+  | **ECE (Calibration Error)** | **0.1070** | 0.0989 | 0.9900 |
+  | **False Auto-Handle Rate** | **4.0%** (1 sensitive) | 9.0% (6 sensitive) | 37.0% (31 sensitive) |
+  | **Unsupported-Claim Rate** | **0.0%** | 0.0% | 0.0% |
+  | **Escalation Coverage** | **84.5%** | 52.5% | 0.0% |
+  | **Safe Auto-Handle Coverage** | **11.5%** | 38.5% | 63.0% |
 - **Human vs LLM Judge Agreement ($N=50$)**:
   - Exact match agreement: **82.0%**
   - Within-1 score agreement: **100.0%**
@@ -148,9 +149,9 @@ This walkthrough documents the step-by-step implementation, empirical milestones
 ## Milestone 10: Test Suite & Repository Integration
 - **Status**: Completed
 - **Test Suite**:
-  - 21 Unit Tests in `tests/unit/`
+  - 35 Unit Tests in `tests/unit/`
   - 8 Integration Tests in `tests/integration/`
-  - **All 29 tests passed** (0 failures, 0 errors) in 96.47s.
+  - **All 43 tests passed** (0 failures, 0 errors) cleanly.
 - **Git State**:
   - Initialized git repository on branch `master`.
   - Remote origin set to: `https://github.com/MohdSajidJafri/HiverSDE_Intern_Solution.git`.
