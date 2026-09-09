@@ -1,0 +1,89 @@
+{
+  "candidates": [
+    {
+      "brand": "SpotifyCares",
+      "outbound_count": 2337,
+      "paired_in_sample": 2328,
+      "non_english_est": 0.009,
+      "avg_cust_char_len": 108.6,
+      "avg_brand_char_len": 135.8,
+      "diversity_ratio": 1.0,
+      "troubleshoot_ratio": 0.1993,
+      "canned_dm_ratio": 0.2165,
+      "usable_support_evidence_score": 96.42
+    },
+    {
+      "brand": "AppleSupport",
+      "outbound_count": 4824,
+      "paired_in_sample": 4797,
+      "non_english_est": 0.0186,
+      "avg_cust_char_len": 116.1,
+      "avg_brand_char_len": 143.6,
+      "diversity_ratio": 0.9998,
+      "troubleshoot_ratio": 0.0605,
+      "canned_dm_ratio": 0.2702,
+      "usable_support_evidence_score": 74.55
+    },
+    {
+      "brand": "Tesco",
+      "outbound_count": 2193,
+      "paired_in_sample": 2185,
+      "non_english_est": 0.0092,
+      "avg_cust_char_len": 123.2,
+      "avg_brand_char_len": 154.2,
+      "diversity_ratio": 1.0,
+      "troubleshoot_ratio": 0.0137,
+      "canned_dm_ratio": 0.0586,
+      "usable_support_evidence_score": 70.95
+    },
+    {
+      "brand": "AmazonHelp",
+      "outbound_count": 12477,
+      "paired_in_sample": 12418,
+      "non_english_est": 0.0682,
+      "avg_cust_char_len": 123.0,
+      "avg_brand_char_len": 131.2,
+      "diversity_ratio": 1.0,
+      "troubleshoot_ratio": 0.0133,
+      "canned_dm_ratio": 0.0048,
+      "usable_support_evidence_score": 70.22
+    },
+    {
+      "brand": "Uber_Support",
+      "outbound_count": 3283,
+      "paired_in_sample": 3281,
+      "non_english_est": 0.0052,
+      "avg_cust_char_len": 128.8,
+      "avg_brand_char_len": 113.5,
+      "diversity_ratio": 0.9988,
+      "troubleshoot_ratio": 0.0134,
+      "canned_dm_ratio": 0.2877,
+      "usable_support_evidence_score": 69.84
+    },
+    {
+      "brand": "Delta",
+      "outbound_count": 1828,
+      "paired_in_sample": 1819,
+      "non_english_est": 0.0088,
+      "avg_cust_char_len": 114.2,
+      "avg_brand_char_len": 103.7,
+      "diversity_ratio": 1.0,
+      "troubleshoot_ratio": 0.0022,
+      "canned_dm_ratio": 0.0126,
+      "usable_support_evidence_score": 68.11
+    },
+    {
+      "brand": "British_Airways",
+      "outbound_count": 1660,
+      "paired_in_sample": 1647,
+      "non_english_est": 0.0091,
+      "avg_cust_char_len": 141.3,
+      "avg_brand_char_len": 133.4,
+      "diversity_ratio": 1.0,
+      "troubleshoot_ratio": 0.0103,
+      "canned_dm_ratio": 0.0735,
+      "usable_support_evidence_score": 66.69
+    }
+  ],
+  "selected_brand": "SpotifyCares"
+}

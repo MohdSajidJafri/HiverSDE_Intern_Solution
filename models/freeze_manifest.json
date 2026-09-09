@@ -1,0 +1,43 @@
+{
+  "freeze_status": "FROZEN",
+  "freeze_timestamp": "2026-09-09T14:55:00Z",
+  "git_commit_sha": "4a0321534a314ba4b19872c3e334123c2a87e9df",
+  "dataset_provenance": {
+    "source": "Customer Support on Twitter (twcs.csv)",
+    "source_url": "https://huggingface.co/datasets/SunidhiSriram/twcs/resolve/main/twcs.csv",
+    "selected_brand": "SpotifyCares"
+  },
+  "file_checksums_sha256": {
+    "gold_messages_jsonl": "e5ab60f0ff06c5c165701832531907607259b17700e1d227b4ccac92d6f1d467",
+    "dev_tuning_jsonl": "50d3d97a29c54cf23ce9695091524636a881bfffdc95257794454fd413c24615",
+    "retrieval_corpus_jsonl": "743b68a1adfea183ccddab2f7af6b1a3140c10b62889246d2deb77f4f2aae1e9",
+    "retrieval_index_pkl": "a0f9db01bf96da17b796862dc31bc3f61a4a304cbca1a6fef8b54318b36a29f7",
+    "intent_classifier_pkl": "2189e5424088eb965e165443f3f0edad45b469945f69b44515135d740a9bf5be",
+    "dependencies_pyproject_toml": "3c3497a6af5824885388eeeb2cf77c69536d3f42860145df02bb53c7c4f9ab08",
+    "config_yaml": "adc96b5f600e62dea2bfe0952b13d1a58a19941af2bd9a3a42c88be8e4abad47"
+  },
+  "model_specifications": {
+    "embedding_model_name": "all-MiniLM-L6-v2",
+    "embedding_dimension": 384,
+    "classifier_architecture": "SentenceTransformer + Multinomial Logistic Regression (L-BFGS) + Multiclass Temperature Scaling + Centroid Outlier Detector",
+    "calibrated_temperature_t": 1.15,
+    "llm_provider": "deterministic_grounded_offline_and_gemini_api_dual",
+    "prompt_template_version": "v1.0-grounded-audit"
+  },
+  "frozen_thresholds": {
+    "intent_confidence_threshold": 0.55,
+    "evidence_quality_threshold": 0.55,
+    "centroid_novelty_threshold": 0.45,
+    "leakage_screening_threshold": 0.92
+  },
+  "policy_configuration": {
+    "sensitive_intents": [
+      "subscription_billing",
+      "account_access_security"
+    ],
+    "escalate_on_contradiction": true,
+    "escalate_on_outlier": true,
+    "escalate_on_low_confidence": true,
+    "escalate_on_low_evidence": true
+  }
+}

@@ -1,0 +1,294 @@
+{
+  "total_messages": 2328,
+  "n_clusters": 12,
+  "clusters": [
+    {
+      "cluster_id": 0,
+      "size": 48,
+      "size_pct": 2.06,
+      "top_terms": [
+        "problem",
+        "explain",
+        "spotify",
+        "phone",
+        "having problem",
+        "just",
+        "good",
+        "works",
+        "app",
+        "having"
+      ],
+      "sample_examples": [
+        "Thanks for the quick reply! I got it to work after un/reinstalling a few times, but I\u2019m on MacOS High Sierra. Looks like version 1.0.68.407.g6864aaaf? I\u2019m not sure what the initial problem was, but again, it\u2019s working now.",
+        "the app is killing #phone #battery fixing this problem? How is this okay. I guess you are getting the money without any complaints",
+        "Nothing, same problem seems to be happening to a lot of people.",
+        "Yes the music works fine no problem. Just the lock screen functionality has completely disappeared",
+        "I have logged in to multiple devices as well. All iPhones with iOS 11 updates. Same problem"
+      ]
+    },
+    {
+      "cluster_id": 1,
+      "size": 206,
+      "size_pct": 8.85,
+      "top_terms": [
+        "account",
+        "help",
+        "premium account",
+        "premium",
+        "email",
+        "spotify",
+        "need",
+        "need help",
+        "facebook",
+        "spotify account"
+      ],
+      "sample_examples": [
+        "Booooourns. , could you please help out with this one?",
+        "I'm using my facebook account as a method to log in.",
+        "y'all charged my account 8 times ..... uhhh",
+        "Help your boy out",
+        "I login with facebook (__email__) - but i think my email account for spotify is my old one (__email__) that is now defunct. What can I do?"
+      ]
+    },
+    {
+      "cluster_id": 2,
+      "size": 48,
+      "size_pct": 2.06,
+      "top_terms": [
+        "thank",
+        "yes",
+        "ok thank",
+        "okay thank",
+        "great",
+        "fixed",
+        "help",
+        "ok",
+        "okay",
+        "worked"
+      ],
+      "sample_examples": [
+        "I doubt it :/ but thank you for replying!",
+        "Fasho thank you for the help",
+        "Checked the three dots and saw the download option and then my song appeared. It works.. but it feels hidden. Thank you for your interest :)",
+        ":(( okay. thank you anyways",
+        "Thank you. Will keep an eye on that."
+      ]
+    },
+    {
+      "cluster_id": 3,
+      "size": 93,
+      "size_pct": 3.99,
+      "top_terms": [
+        "thanks",
+        "guys",
+        "ok thanks",
+        "ll",
+        "ok",
+        "dm",
+        "okay",
+        "thanks guys",
+        "got",
+        "know"
+      ],
+      "sample_examples": [
+        "Hey hey! Thanks for reaching out! , could you help out with Pascal's payment update?",
+        "Thanks!",
+        "Okay! I did it! Thanks",
+        "What should I do in this cases? Thanks in advance! (2)",
+        "Ok! Thanks. I will let you know if it happens again. Thanks for every thing! http://link"
+      ]
+    },
+    {
+      "cluster_id": 4,
+      "size": 730,
+      "size_pct": 31.36,
+      "top_terms": [
+        "dm",
+        "album",
+        "guys",
+        "avail",
+        "like",
+        "email",
+        "need",
+        "work",
+        "yes",
+        "tried"
+      ],
+      "sample_examples": [
+        "ok thx",
+        "1.0.65.320.gac7a8e02",
+        "Why are my devices not doing the cool thing when I play the #StrangerThings albums on ? \ud83d\ude2d",
+        "why are Nena's releases between 2002 and 2012 all missing, yet everything else from 1982 - 2017 is there? #sadness #emptyplaylist",
+        "Made In Germany, Du Bist Gut, Cover Me and 20 Jahre (this one mostly). Because these are missing, a few compilations have greyed out tracks"
+      ]
+    },
+    {
+      "cluster_id": 5,
+      "size": 128,
+      "size_pct": 5.5,
+      "top_terms": [
+        "just",
+        "ll",
+        "know",
+        "did",
+        "dm",
+        "make",
+        "phone",
+        "albums",
+        "tried",
+        "spotify"
+      ],
+      "sample_examples": [
+        "Premium & when i\ufe0f have it on shuffle it turns off when the song is done and just plays in order and the repeat lights up but doesn\u2019t repeat",
+        "i\u2019m pissed my shuffle and repeat button just don\u2019t fucking work and i\u2019m getting frustrated",
+        ". any way to block this particular ad? Happy with ads/dont want premium. Just this ad is really hard to watch over and over and over. Please help. http://link",
+        "Hey did you take \"You shook me all night long\" off spotify just to piss me off? Why remove the greatest song ever made?",
+        "No just on my phone since I installed iOS 11. Mostly on 3G/4g. It\u2019s very random when it decides not to work."
+      ]
+    },
+    {
+      "cluster_id": 6,
+      "size": 188,
+      "size_pct": 8.08,
+      "top_terms": [
+        "app",
+        "music",
+        "apple",
+        "spotify",
+        "play",
+        "desktop app",
+        "desktop",
+        "phone",
+        "download",
+        "spotify app"
+      ],
+      "sample_examples": [
+        "doesn\u2019t work and i even tried deleting the app",
+        "Yes, multiple times. No changes. I am Premium User an when send us users to Spotify there should be a bugfree running App \ud83e\udd28",
+        "Groove Music quits & redirect to Spotify. But the W10M App is a bugfest.. Any further Updates possible?",
+        "Desktop app still not working, but I got to see the cool thing (Easter egg) so I\u2019m ecstatic! \ud83d\ude0a\ud83d\ude0a",
+        "It\u2019s on the mobile app"
+      ]
+    },
+    {
+      "cluster_id": 7,
+      "size": 147,
+      "size_pct": 6.31,
+      "top_terms": [
+        "premium",
+        "family",
+        "spotify premium",
+        "spotify",
+        "99",
+        "months",
+        "student",
+        "charged",
+        "premium family",
+        "subscription"
+      ],
+      "sample_examples": [
+        "Im paying for premium but every time i log in it keeps saying free service",
+        "my spotify premium stopped working",
+        "My kids wanted premium but your student deals are only for college/ uni kids. Won't you consider the younger kids that are addicted to Spotify too?",
+        "My kids wanted premium but your student deals are only for college/ uni kids. Won't you consider the younger kids that are addicted to Spotify too?",
+        "My family premium account has stopped working, even though we have payed this month, it was working last week"
+      ]
+    },
+    {
+      "cluster_id": 8,
+      "size": 170,
+      "size_pct": 7.3,
+      "top_terms": [
+        "songs",
+        "playlist",
+        "song",
+        "play",
+        "playlists",
+        "like",
+        "does",
+        "music",
+        "new",
+        "spotify"
+      ],
+      "sample_examples": [
+        "is there a way to find non-explicit songs that are explicit",
+        "why is this album on Spotify if it's not playable? It would be super if was available, THIS IS #2NE1 playlist would be complete if it had all the songs from their first mini album http://link",
+        "Dear how do i get my discovery playlist to stop suggesting Dutch music to me, it's been a year",
+        "is there anyway to move songs around so they're in my order and not the order of when I added them...if that makes sense?",
+        "What keywords besides \"playlist\", \"playlists\", + \"song\" would I use?"
+      ]
+    },
+    {
+      "cluster_id": 9,
+      "size": 261,
+      "size_pct": 11.21,
+      "top_terms": [
+        "link",
+        "http link",
+        "http",
+        "spotify",
+        "hey",
+        "spotify http",
+        "song",
+        "like",
+        "link http",
+        "album"
+      ],
+      "sample_examples": [
+        "2/2... and there is no way to manage Albums (recently added e.g.) in the App. It's a mess \ud83d\ude32 http://link",
+        "So : three days later you\u2019re still advertising a sale to me for which I\u2019m geographically ineligible, this time on Facebook. You know you can choose where you want your ads to display on FB, don\u2019t you? http://link",
+        "http://link - you having a party without me?",
+        "every single time someone sends a Spotify link, it never works the first time. I have to A L W A Y S press the link twice for it to work \ud83e\udd26\ud83c\udffb\u200d\u2642\ufe0f\ud83e\udd26\ud83c\udffb\u200d\u2642\ufe0f http://link",
+        "Why?? http://link"
+      ]
+    },
+    {
+      "cluster_id": 10,
+      "size": 107,
+      "size_pct": 4.6,
+      "top_terms": [
+        "card",
+        "hi",
+        "pay",
+        "credit",
+        "credit card",
+        "web player",
+        "student",
+        "player",
+        "web",
+        "discount"
+      ],
+      "sample_examples": [
+        "only credit card??",
+        "I can't seem to get in due to the card or payment provider, yet I checked my card and it is 100% fine. Can you please fix this?",
+        "is there an email i can message? Ive been trying to buy premuim for a few days but i keep getting the card bad day error.",
+        "My web player is stuck in a commercial. 'Play' isn't an option. Tried clearing cookies, etc. nothing helped. #ijustwantmusic http://link",
+        "Help on my spotify card please"
+      ]
+    },
+    {
+      "cluster_id": 11,
+      "size": 202,
+      "size_pct": 8.68,
+      "top_terms": [
+        "spotify",
+        "version",
+        "ios",
+        "11",
+        "iphone",
+        "ios 11",
+        "28",
+        "spotify version",
+        "android",
+        "isn"
+      ],
+      "sample_examples": [
+        "iphone 7+ and i have the most recent update for spotify",
+        "using a MacBook Pro with OS X El Capitan and the latest Spotify update, and an iPhone 6S with the latest software/Spotify updates!",
+        "Hey there! Don't worry, help's here. Can you let us know the iPhone model you're using along with its iOS and Spotify versions? We'll see what we can suggest /MT",
+        "Spotify 8.4.24.871 Android version 7.0 device: a brand new Huawei mate 9 . I will look like an ass if it's a matter of just updates\ud83d\ude0a",
+        "And this is why I\u2019ll love Spotify forever and why you are my favorite music platform. Thank you! \ud83d\ude4f\ud83c\udffd\ud83d\udcaf\u2744\ufe0f"
+      ]
+    }
+  ]
+}

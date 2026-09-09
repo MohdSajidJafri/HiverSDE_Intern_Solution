@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hiver-agent"
+version = "0.1.0"
+description = "Evidence-grounded brand AI customer support agent research prototype"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Hiver SDE Intern Candidate" }
+]
+dependencies = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "scikit-learn>=1.3.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "httpx>=0.24.0",
+    "tqdm>=4.65.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]

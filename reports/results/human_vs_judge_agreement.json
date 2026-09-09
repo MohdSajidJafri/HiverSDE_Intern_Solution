@@ -1,0 +1,63 @@
+{
+  "overall_metrics": {
+    "spearman_rho": 0.5921,
+    "pearson_r": 0.8255,
+    "exact_agreement_pct": 82.0,
+    "within_1_agreement_pct": 100.0,
+    "mean_absolute_difference": 0.18,
+    "total_evaluations": 350
+  },
+  "per_dimension": {
+    "correctness": {
+      "spearman_rho": 0.0,
+      "pearson_r": 0.0,
+      "exact_agreement_pct": 78.0,
+      "within_1_agreement_pct": 100.0,
+      "mean_absolute_difference": 0.22
+    },
+    "relevance": {
+      "spearman_rho": 0.6821,
+      "pearson_r": 0.693,
+      "exact_agreement_pct": 74.0,
+      "within_1_agreement_pct": 100.0,
+      "mean_absolute_difference": 0.26
+    },
+    "grounding": {
+      "spearman_rho": 0.8262,
+      "pearson_r": 0.9146,
+      "exact_agreement_pct": 66.0,
+      "within_1_agreement_pct": 100.0,
+      "mean_absolute_difference": 0.34
+    },
+    "completeness": {
+      "spearman_rho": 0.0,
+      "pearson_r": 0.0,
+      "exact_agreement_pct": 74.0,
+      "within_1_agreement_pct": 100.0,
+      "mean_absolute_difference": 0.26
+    },
+    "tone": {
+      "spearman_rho": 0.0,
+      "pearson_r": 0.0,
+      "exact_agreement_pct": 82.0,
+      "within_1_agreement_pct": 100.0,
+      "mean_absolute_difference": 0.18
+    },
+    "unsupported_claims": {
+      "spearman_rho": 1.0,
+      "pearson_r": 1.0,
+      "exact_agreement_pct": 100.0,
+      "within_1_agreement_pct": 100.0,
+      "mean_absolute_difference": 0.0
+    },
+    "escalation_appropriateness": {
+      "spearman_rho": 1.0,
+      "pearson_r": 1.0,
+      "exact_agreement_pct": 100.0,
+      "within_1_agreement_pct": 100.0,
+      "mean_absolute_difference": 0.0
+    }
+  },
+  "disagreements_count": 0,
+  "disagreements_detail": []
+}
