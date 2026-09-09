@@ -56,23 +56,24 @@ python demo.py --query "Desktop app crashes immediately on launch after update"
 
 ## 📊 Headline Benchmark Results
 
-Evaluated on the frozen silver evaluation benchmark ($N=200$ real customer inquiries from `@SpotifyCares`) against two operational baselines under identical frozen conditions:
+Evaluated on the frozen silver development evaluation benchmark ($N=200$ real customer inquiries from `@SpotifyCares`) against two operational baselines under identical frozen conditions:
 
 | Metric | Baseline 1 (Trivial) | Baseline 2 (Simple) | Primary Agent (Frozen) |
 |---|---|---|---|
-| **Intent Accuracy (Stratified View)** | 8.5% | 57.0% | **72.5%** |
-| **Intent Macro F1 (Stratified View)** | 1.6% | 22.1% | **41.4%** |
-| **Intent Accuracy (Natural View)** | 2.9% | 85.5% | **90.2%** |
-| **Intent Weighted F1 (Natural View)** | 0.2% | 81.5% | **89.2%** |
-| **Expected Calibration Error (ECE)** | 0.9150 | 0.0712 | **0.0863** |
-| **Brier Calibration Score** | 1.8300 | 0.6030 | **0.4115** |
-| **Safe Auto-Handle Coverage** | 75.0% | 47.5% | **13.5%** |
-| **False Auto-Handle Rate (CRITICAL)** | 25.0% | 4.5% | **1.0%** *(2/200 overall; 0% on sensitive validation)* |
-| **Escalation Rate** | 0.0% | 48.0% | **85.5%** *(Conservative safety posture)* |
-| **Retrieval Hit@1** | 0.0000 | 0.2950 | **0.9300** |
-| **Retrieval Hit@3** | 0.0000 | 0.2950 | **0.9300** |
-| **Mean Reciprocal Rank (MRR)** | 0.0000 | 0.2950 | **0.9300** |
-| **Unsupported-Claim Rate (Safety)** | 0.0% | 0.0% | **0.0%** *(Strict grounding)* |
+| **Intent Accuracy (Stratified View)** | 5.5% | 60.0% | **75.0%** |
+| **Intent Macro F1 (Stratified View)** | 1.0% | 22.2% | **45.0%** |
+| **Intent Accuracy (Natural View)** | 1.1% | 87.6% | **90.5%** |
+| **Intent Weighted F1 (Natural View)** | 0.0% | 84.5% | **90.1%** |
+| **Expected Calibration Error (ECE)** | 0.9450 | 0.0872 | **0.0687** |
+| **Brier Calibration Score** | 1.8900 | 0.5710 | **0.3921** |
+| **Safe Auto-Handle Coverage** | 76.5% | 47.5% | **14.0%** |
+| **False Auto-Handle Rate (CRITICAL)** | 23.5% | 3.5% | **0.5%** *(1/200 overall; 0% on sensitive validation)* |
+| **Escalation Rate** | 0.0% | 49.0% | **85.5%** *(Conservative safety posture)* |
+| **Proxy Retrieval Hit@1** | 0.0000 | 0.0000 | **0.6350** *(Intent-consistent proxy)* |
+| **Proxy Retrieval Hit@3** | 0.0000 | 0.0000 | **0.8300** *(Intent-consistent proxy)* |
+| **Proxy Mean Reciprocal Rank (MRR)** | 0.0000 | 0.0000 | **0.7258** *(Intent-consistent proxy)* |
+| **Threshold Coverage Diagnostic (Sim $\ge$ 0.45)** | 0.0% | 27.0% | **91.0%** *(Retrieval-score diagnostic)* |
+| **Unsupported-Claim Rate (Safety)** | 0.0% | 0.0% | **0.0%** *(Strict claim verification)* |
 | **Grounded-Response Rate** | 100.0% | 100.0% | **100.0%** |
 
 ---
@@ -92,13 +93,13 @@ Evaluated on the frozen silver evaluation benchmark ($N=200$ real customer inqui
      ▼                                               ▼
 [ Calibrated Classifier ]                 [ Centroid Outlier Detector ]
 (Multinomial Logistic Regression +         (Cosine distance to class
- Multiclass Temperature Scaling T=0.7820)   centroids; catches novelty anomalies)
+ Multiclass Temperature Scaling T=0.7911)   centroids; catches novelty anomalies)
      │                                               │
      └───────────────────────┬───────────────────────┘
                              │
                              ▼
             [ Semantic Evidence Retrieval ]
-         (Vector store over 1,754 historical Spotify pairs)
+         (Vector store over 1,427 historical Spotify pairs)
                              │
                              ▼
             [ Evidence Quality & Contradiction Layer ]

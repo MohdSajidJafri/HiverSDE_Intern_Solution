@@ -250,7 +250,8 @@ def main():
             "source_url": "https://huggingface.co/datasets/SunidhiSriram/twcs/resolve/main/twcs.csv",
             "selected_brand": "SpotifyCares",
             "partition_strategy": "connected_components_author_conversation_bipartite_graph",
-            "evaluation_tier": "SILVER_DEVELOPMENT_PENDING_HUMAN_GOLD"
+            "evaluation_tier": "SILVER_DEVELOPMENT_PENDING_HUMAN_GOLD",
+            "calibration_provenance": "Calibrated via Multiclass Temperature Scaling on silver-labelled validation split (data/val/dev_tuning.jsonl, N=156); explicitly NOT human gold calibration"
         },
         "file_checksums_sha256": {
             "gold_annotation_queue_jsonl": get_file_sha256(project_root / "data" / "gold" / "gold_annotation_queue.jsonl"),
@@ -268,6 +269,7 @@ def main():
             "classifier_architecture": "SentenceTransformer + Multinomial Logistic Regression (L-BFGS) + Multiclass Temperature Scaling + Centroid Outlier Detector",
             "calibrated_temperature_t": round(actual_temperature, 4),
             "temperature_source": "models/intent_classifier.pkl:scaler.temperature",
+            "temperature_label_provenance": "Fitted via L-BFGS NLL minimization on silver-labelled validation split (data/val/dev_tuning.jsonl, N=156); explicitly NOT human gold labels",
             "llm_provider": "deterministic_grounded_production",
             "prompt_template_version": "v1.0-grounded-audit"
         },

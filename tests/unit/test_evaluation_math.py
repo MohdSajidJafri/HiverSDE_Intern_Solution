@@ -14,20 +14,21 @@ from src.hiver_agent.nlp.calibration import MulticlassTemperatureScaler
 
 def test_mrr_and_hit_at_k_exact_hand_calculation():
     """
-    Verify Hit@1, Hit@3, and MRR calculations against exact hand-calculated expected values.
+    Verify Hit@1, Hit@3, and MRR calculations under the Intent-Consistent Retrieval Relevance Proxy.
     
-    Setup: 4 samples
-    Sample 1: First relevant at rank 1 (sim 0.80 >= 0.45) -> RR = 1.0, Hit@1=1, Hit@3=1
-    Sample 2: First relevant at rank 2 (sim 0.30 < 0.45, sim 0.70 >= 0.45) -> RR = 0.5, Hit@1=0, Hit@3=1
-    Sample 3: First relevant at rank 3 (sim 0.20, sim 0.25, sim 0.60 >= 0.45) -> RR = 1/3, Hit@1=0, Hit@3=1
-    Sample 4: No relevant in top 3 (all sims < 0.45) -> RR = 0.0, Hit@1=0, Hit@3=0
+    Setup: 4 samples with query true_intent = 'playback_issues'
+    Sample 1: Rank 1 matches intent & non-empty reply -> First relevant at rank 1 (RR = 1.0, Hit@1=1, Hit@3=1)
+    Sample 2: Rank 1 diff intent, Rank 2 matches intent & non-empty reply -> First relevant at rank 2 (RR = 0.5, Hit@1=0, Hit@3=1)
+    Sample 3: Ranks 1 & 2 diff intent, Rank 3 matches intent & non-empty reply -> First relevant at rank 3 (RR = 1/3, Hit@1=0, Hit@3=1)
+    Sample 4: No candidate in top 3 matches intent -> Not in top 3 (RR = 0.0, Hit@1=0, Hit@3=0)
 
     Expected:
-    Hit@1 = 1 / 4 = 0.25
-    Hit@3 = 3 / 4 = 0.75
-    MRR = (1.0 + 0.5 + (1/3) + 0.0) / 4 = (11/6) / 4 = 11/24 ~= 0.458333...
+    Proxy Hit@1 = 1 / 4 = 0.25
+    Proxy Hit@3 = 3 / 4 = 0.75
+    Proxy MRR = (1.0 + 0.5 + (1/3) + 0.0) / 4 = (11/6) / 4 = 11/24 ~= 0.458333...
+    Rank distribution: {1: 1, 2: 1, 3: 1, 'not_in_top_3': 1}
     """
-    intents = ["playback_issues", "app_crash_technical"]
+    intents = ["playback_issues", "app_crash_technical", "subscription_billing"]
     harness = EvaluationHarness(intents=intents)
 
     gold = [
@@ -43,8 +44,8 @@ def test_mrr_and_hit_at_k_exact_hand_calculation():
             "decision": {"action": "AUTO_HANDLE"},
             "retrieval": {
                 "evidence": [
-                    {"evidence_id": "e1", "similarity": 0.80},
-                    {"evidence_id": "e2", "similarity": 0.50},
+                    {"evidence_id": "e1", "similarity": 0.80, "intent": "playback_issues", "historical_brand_reply": "Restart your Spotify player to restore audio."},
+                    {"evidence_id": "e2", "similarity": 0.50, "intent": "playback_issues", "historical_brand_reply": "Clear your local cache."},
                 ]
             }
         },
@@ -53,8 +54,8 @@ def test_mrr_and_hit_at_k_exact_hand_calculation():
             "decision": {"action": "AUTO_HANDLE"},
             "retrieval": {
                 "evidence": [
-                    {"evidence_id": "e1", "similarity": 0.30},
-                    {"evidence_id": "e2", "similarity": 0.70},
+                    {"evidence_id": "e1", "similarity": 0.85, "intent": "app_crash_technical", "historical_brand_reply": "Reinstall the application from the app store."},
+                    {"evidence_id": "e2", "similarity": 0.70, "intent": "playback_issues", "historical_brand_reply": "Restart your bluetooth device and retry."},
                 ]
             }
         },
@@ -63,9 +64,9 @@ def test_mrr_and_hit_at_k_exact_hand_calculation():
             "decision": {"action": "AUTO_HANDLE"},
             "retrieval": {
                 "evidence": [
-                    {"evidence_id": "e1", "similarity": 0.20},
-                    {"evidence_id": "e2", "similarity": 0.25},
-                    {"evidence_id": "e3", "similarity": 0.60},
+                    {"evidence_id": "e1", "similarity": 0.75, "intent": "subscription_billing", "historical_brand_reply": "Check your receipt in account settings."},
+                    {"evidence_id": "e2", "similarity": 0.65, "intent": "app_crash_technical", "historical_brand_reply": "Update to the latest OS version."},
+                    {"evidence_id": "e3", "similarity": 0.60, "intent": "playback_issues", "historical_brand_reply": "Disable hardware acceleration in settings."},
                 ]
             }
         },
@@ -74,9 +75,9 @@ def test_mrr_and_hit_at_k_exact_hand_calculation():
             "decision": {"action": "AUTO_HANDLE"},
             "retrieval": {
                 "evidence": [
-                    {"evidence_id": "e1", "similarity": 0.20},
-                    {"evidence_id": "e2", "similarity": 0.35},
-                    {"evidence_id": "e3", "similarity": 0.40},
+                    {"evidence_id": "e1", "similarity": 0.70, "intent": "subscription_billing", "historical_brand_reply": "Your subscription has been renewed."},
+                    {"evidence_id": "e2", "similarity": 0.60, "intent": "subscription_billing", "historical_brand_reply": "Please check your bank statement."},
+                    {"evidence_id": "e3", "similarity": 0.40, "intent": "app_crash_technical", "historical_brand_reply": "Force stop the app."},
                 ]
             }
         }
@@ -85,9 +86,29 @@ def test_mrr_and_hit_at_k_exact_hand_calculation():
     metrics = harness.evaluate_predictions(gold, preds)
     retrieval = metrics["evidence_retrieval"]
 
+    # Test Proxy metrics
+    proxy_res = retrieval["intent_consistent_proxy"]
+    assert proxy_res["proxy_hit_at_1"] == pytest.approx(0.25, abs=1e-4)
+    assert proxy_res["proxy_hit_at_3"] == pytest.approx(0.75, abs=1e-4)
+    assert proxy_res["proxy_mean_reciprocal_rank"] == pytest.approx(11.0 / 24.0, abs=1e-4)
+
+    # Test rank distribution
+    dist = proxy_res["first_relevant_rank_distribution"]
+    assert dist["rank_1"] == 1
+    assert dist["rank_2"] == 1
+    assert dist["rank_3"] == 1
+    assert dist["not_in_top_3"] == 1
+
+    # Test backward-compatible aliases
     assert retrieval["hit_at_1"] == pytest.approx(0.25, abs=1e-4)
     assert retrieval["hit_at_3"] == pytest.approx(0.75, abs=1e-4)
     assert retrieval["mean_reciprocal_rank"] == pytest.approx(11.0 / 24.0, abs=1e-4)
+
+    # Test threshold coverage diagnostic
+    diag = retrieval["threshold_coverage_diagnostic"]
+    assert diag["threshold_applied"] == 0.45
+    # All 4 samples have top1 >= 0.45 (0.80, 0.85, 0.75, 0.70)
+    assert diag["top1_coverage"] == pytest.approx(1.0, abs=1e-4)
 
 
 def test_brier_score_hand_calculation():

@@ -75,12 +75,12 @@ The architecture consists of modular, testable components externalized via `conf
 1. **Text Normalization**: Strips Twitter `@mentions`, preserves punctuation and emojis, standardizes URLs.
 2. **Calibrated Classifier**:
    - Dense embeddings: `all-MiniLM-L6-v2` (384-d).
-   - Classification head: Multinomial Logistic Regression fitted on diverse training embeddings (`data/processed/silver_training_data.jsonl`, 1,754 records).
-   - Multiclass Temperature Scaling ($T=0.7820$) fitted on real validation logits via L-BFGS to calibrate probabilities.
+   - Classification head: Multinomial Logistic Regression fitted on diverse training embeddings (`data/processed/silver_training_data.jsonl`, 1,427 records).
+   - Multiclass Temperature Scaling ($T=0.7911$) fitted on real validation logits via L-BFGS to calibrate probabilities (silver-labelled validation split, $N=156$).
    - Auxiliary Centroid Detector: Computes cosine distance to class geometric centroids $\min_k (1 - \cos(\mathbf{x}, \mathbf{c}_k))$ to catch out-of-scope queries ($>0.45$).
 3. **Semantic Evidence Retrieval**:
-   - Vector store indexing 1,754 historical Spotify interaction pairs (`models/retrieval_index.pkl`).
-   - Top-$K$ retrieval returning historical customer inquiries, brand responses, and full provenance IDs.
+   - Vector store indexing 1,427 historical Spotify interaction pairs (`models/retrieval_index.pkl`).
+   - Top-$K$ retrieval returning historical customer inquiries, brand responses, intent metadata, and full provenance IDs.
 4. **Evidence Quality & Contradiction Layer**:
    - Distinguishes: (a) compatible historical advice, (b) genuinely incompatible advice (e.g. reinstall vs do not reinstall), (c) insufficient evidence.
 5. **Conservative Escalation Engine**:
@@ -92,17 +92,18 @@ The architecture consists of modular, testable components externalized via `conf
 
 ---
 
-## 5. Evaluation Methodology & Leakage Prevention
+## 5. Evaluation Methodology & 4-Way Quarantine
 
-- **Silver Development Benchmark**: 200 real customer inquiries from `@SpotifyCares` (`data/interim/silver_eval_set.jsonl` and `data/gold/gold_messages.jsonl`) used for reproducible automated evaluation.
-- **Quarantined Gold Candidate Queue**: 200 real customer inquiries (`data/gold/gold_annotation_queue.jsonl` & `.csv`) strictly quarantined with blank labels awaiting manual human review.
-- **Quarantined Validation Split**: 184 interaction pairs (`data/val/dev_tuning.jsonl`) used for temperature calibration and multi-objective threshold sweeping.
+- **Silver Development Benchmark**: 200 real customer inquiries from `@SpotifyCares` (`data/interim/silver_eval_set.jsonl` and `data/gold/gold_messages.jsonl`) used for reproducible automated development evaluation. Completely disjoint from Gold candidates.
+- **Quarantined Gold Candidate Queue**: 200 real customer inquiries (`data/gold/gold_annotation_queue.jsonl` & `.csv`) strictly quarantined with blank labels (`gold_intent = ""`) awaiting manual human review. Never used in training, tuning, calibration, or development evaluation.
+- **Quarantined Validation Split**: 156 interaction pairs (`data/val/dev_tuning.jsonl`) used exclusively for temperature calibration ($T=0.7911$) and multi-objective threshold sweeping ($\tau_{conf}=0.45, \tau_{qual}=0.45$).
+- **Clean Retrieval & Training Corpus**: 1,427 interaction pairs (`data/processed/retrieval_corpus.jsonl`) providing dense semantic grounding and training embeddings. Every record carries an explicit `intent` tag.
 - **Dual Evaluation Views**:
   - **Stratified View**: Unweighted evaluation for per-class diagnostic fidelity.
   - **Natural Distribution View**: Importance-weighted using empirical class frequencies observed in the evaluation corpus.
-- **Multi-Layer Graph Leakage Audit (`docs/LEAKAGE_AUDIT.md`)**:
+- **Multi-Layer 4-Way Leakage Audit (`docs/LEAKAGE_AUDIT.md`)**:
   - Partitioning by connected components of the `(customer_author_id, conversation_id)` bipartite graph.
-  - Tweet ID overlap: **0**; Thread ID overlap: **0**; Author-day overlap: **0**.
+  - Tweet ID overlap: **0 across all 6 pairs**; Thread ID overlap: **0 across all 6 pairs**; Author ID overlap: **0 across all 6 pairs**.
 - **Pre-Evaluation Freeze**: All parameters locked in `models/freeze_manifest.json` prior to running evaluation.
 
 ---
@@ -115,19 +116,20 @@ The frozen primary system was evaluated against two operational baselines under 
 
 | Evaluation Metric | Baseline 1 (Trivial) | Baseline 2 (Simple) | Primary Agent (Frozen) |
 |---|---|---|---|
-| **Intent Accuracy (Stratified)** | 8.5% | 57.0% | **72.5%** |
-| **Intent Macro F1 (Stratified)** | 1.6% | 22.1% | **41.4%** |
-| **Intent Accuracy (Natural View)** | 2.9% | 85.5% | **90.2%** |
-| **Intent Weighted F1 (Natural View)** | 0.2% | 81.5% | **89.2%** |
-| **Expected Calibration Error (ECE)** | 0.9150 | 0.0712 | **0.0863** |
-| **Brier Calibration Score** | 1.8300 | 0.6030 | **0.4115** |
-| **Safe Auto-Handle Coverage** | 75.0% | 47.5% | **13.5%** |
-| **False Auto-Handle Rate (CRITICAL)** | 25.0% | 4.5% | **1.0%** *(2/200 overall; 0% on sensitive validation)* |
-| **Escalation Rate** | 0.0% | 48.0% | **85.5%** *(Conservative safety posture)* |
-| **Retrieval Hit@1** | 0.0000 | 0.2950 | **0.9300** |
-| **Retrieval Hit@3** | 0.0000 | 0.2950 | **0.9300** |
-| **Mean Reciprocal Rank (MRR)** | 0.0000 | 0.2950 | **0.9300** |
-| **Unsupported-Claim Rate (Safety)** | 0.0% | 0.0% | **0.0%** *(Strict grounding)* |
+| **Intent Accuracy (Stratified)** | 5.5% | 60.0% | **75.0%** |
+| **Intent Macro F1 (Stratified)** | 1.0% | 22.2% | **45.0%** |
+| **Intent Accuracy (Natural View)** | 1.1% | 87.6% | **90.5%** |
+| **Intent Weighted F1 (Natural View)** | 0.0% | 84.5% | **90.1%** |
+| **Expected Calibration Error (ECE)** | 0.9450 | 0.0872 | **0.0687** |
+| **Brier Calibration Score** | 1.8900 | 0.5710 | **0.3921** |
+| **Safe Auto-Handle Coverage** | 76.5% | 47.5% | **14.0%** |
+| **False Auto-Handle Rate (CRITICAL)** | 23.5% | 3.5% | **0.5%** *(1/200 overall; 0% on sensitive validation)* |
+| **Escalation Rate** | 0.0% | 49.0% | **85.5%** *(Conservative safety posture)* |
+| **Proxy Retrieval Hit@1** | 0.0000 | 0.0000 | **0.6350** *(Intent-consistent proxy)* |
+| **Proxy Retrieval Hit@3** | 0.0000 | 0.0000 | **0.8300** *(Intent-consistent proxy)* |
+| **Proxy Mean Reciprocal Rank (MRR)** | 0.0000 | 0.0000 | **0.7258** *(Intent-consistent proxy)* |
+| **Threshold Coverage Diagnostic (Sim $\ge$ 0.45)** | 0.0% | 27.0% | **91.0%** *(Retrieval-score diagnostic)* |
+| **Unsupported-Claim Rate (Safety)** | 0.0% | 0.0% | **0.0%** *(Strict claim verification)* |
 | **Grounded-Response Rate** | 100.0% | 100.0% | **100.0%** |
 
 ### Per-Intent Performance (Primary Agent):

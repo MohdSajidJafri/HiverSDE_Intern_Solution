@@ -104,14 +104,22 @@ def run_agent_pipeline(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate Hiver Support Agent on Gold Set")
-    parser.add_argument("--gold-set", type=str, default="data/gold/gold_messages.jsonl", help="Path to gold set")
+    parser = argparse.ArgumentParser(description="Evaluate Hiver Support Agent on Benchmark Set")
+    parser.add_argument("--gold-set", type=str, default="data/interim/silver_eval_set.jsonl", help="Path to evaluation benchmark set")
     parser.add_argument("--output", type=str, default="reports/results/evaluation_results.json", help="Path to output results")
     args = parser.parse_args()
 
     print("=" * 80)
     print("FROZEN EVALUATION RUNNER: HIVER BRAND SUPPORT AGENT")
     print("=" * 80)
+
+    # Enforce strict Gold Quarantine: the unlabelled candidate gold queue must never be evaluated
+    gold_path = project_root / args.gold_set
+    if "gold_annotation_queue" in str(gold_path):
+        raise ValueError(
+            "CRITICAL METHODOLOGICAL ERROR: Attempted to run evaluation on the quarantined Gold Candidate Queue! "
+            "The 200 Gold candidate records are strictly quarantined from development evaluation."
+        )
 
     # Load authoritative frozen configuration (fails loudly on config mismatch)
     config = AppConfig.load_authoritative()
@@ -120,7 +128,6 @@ def main():
     print(f"  tau_qual: {config.thresholds.evidence_quality_threshold}")
 
     # Load evaluation dataset
-    gold_path = project_root / args.gold_set
     with open(gold_path, "r", encoding="utf-8") as f:
         gold_records = [json.loads(line) for line in f]
     is_gold = any(r.get("is_human_annotated_gold", False) for r in gold_records)
@@ -206,9 +213,10 @@ def main():
         ("Safe Auto-Handle Coverage", base1_eval["escalation_policy"]["safe_auto_handle_coverage"], base2_eval["escalation_policy"]["safe_auto_handle_coverage"], primary_eval["escalation_policy"]["safe_auto_handle_coverage"]),
         ("False Auto-Handle Rate (CRITICAL)", base1_eval["escalation_policy"]["false_auto_handle_rate"], base2_eval["escalation_policy"]["false_auto_handle_rate"], primary_eval["escalation_policy"]["false_auto_handle_rate"]),
         ("Escalation Rate", base1_eval["escalation_policy"]["escalation_rate"], base2_eval["escalation_policy"]["escalation_rate"], primary_eval["escalation_policy"]["escalation_rate"]),
-        ("Retrieval Hit@1", base1_eval["evidence_retrieval"].get("hit_at_1", 0.0), base2_eval["evidence_retrieval"].get("hit_at_1", 0.0), primary_eval["evidence_retrieval"].get("hit_at_1", 0.0)),
-        ("Retrieval Hit@3", base1_eval["evidence_retrieval"].get("hit_at_3", 0.0), base2_eval["evidence_retrieval"].get("hit_at_3", 0.0), primary_eval["evidence_retrieval"].get("hit_at_3", 0.0)),
-        ("Mean Reciprocal Rank (MRR)", base1_eval["evidence_retrieval"].get("mean_reciprocal_rank", 0.0), base2_eval["evidence_retrieval"].get("mean_reciprocal_rank", 0.0), primary_eval["evidence_retrieval"].get("mean_reciprocal_rank", 0.0)),
+        ("Proxy Retrieval Hit@1", base1_eval["evidence_retrieval"].get("proxy_hit_at_1", 0.0), base2_eval["evidence_retrieval"].get("proxy_hit_at_1", 0.0), primary_eval["evidence_retrieval"].get("proxy_hit_at_1", 0.0)),
+        ("Proxy Retrieval Hit@3", base1_eval["evidence_retrieval"].get("proxy_hit_at_3", 0.0), base2_eval["evidence_retrieval"].get("proxy_hit_at_3", 0.0), primary_eval["evidence_retrieval"].get("proxy_hit_at_3", 0.0)),
+        ("Proxy MRR", base1_eval["evidence_retrieval"].get("proxy_mrr", 0.0), base2_eval["evidence_retrieval"].get("proxy_mrr", 0.0), primary_eval["evidence_retrieval"].get("proxy_mrr", 0.0)),
+        ("Threshold Coverage (Sim >= 0.45)", base1_eval["evidence_retrieval"].get("threshold_coverage_diagnostic", {}).get("top1_coverage", 0.0), base2_eval["evidence_retrieval"].get("threshold_coverage_diagnostic", {}).get("top1_coverage", 0.0), primary_eval["evidence_retrieval"].get("threshold_coverage_diagnostic", {}).get("top1_coverage", 0.0)),
         ("Unsupported-Claim Rate (Safety)", base1_eval["reply_generation"]["unsupported_claim_rate"], base2_eval["reply_generation"]["unsupported_claim_rate"], primary_eval["reply_generation"]["unsupported_claim_rate"]),
         ("Grounded-Response Rate", base1_eval["reply_generation"]["grounded_response_rate"], base2_eval["reply_generation"]["grounded_response_rate"], primary_eval["reply_generation"]["grounded_response_rate"])
     ]

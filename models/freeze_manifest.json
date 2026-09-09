@@ -1,30 +1,32 @@
 {
   "freeze_status": "FROZEN",
   "freeze_timestamp": "2026-09-09T15:45:00Z",
-  "git_commit_sha": "947d088b5c11812f0c4e905ae85b556c926c251d",
+  "git_commit_sha": "f83ab8c8117be54356d67dc019e519a889d99f27",
   "dataset_provenance": {
     "source": "Customer Support on Twitter (twcs.csv)",
     "source_url": "https://huggingface.co/datasets/SunidhiSriram/twcs/resolve/main/twcs.csv",
     "selected_brand": "SpotifyCares",
     "partition_strategy": "connected_components_author_conversation_bipartite_graph",
-    "evaluation_tier": "SILVER_DEVELOPMENT_PENDING_HUMAN_GOLD"
+    "evaluation_tier": "SILVER_DEVELOPMENT_PENDING_HUMAN_GOLD",
+    "calibration_provenance": "Calibrated via Multiclass Temperature Scaling on silver-labelled validation split (data/val/dev_tuning.jsonl, N=156); explicitly NOT human gold calibration"
   },
   "file_checksums_sha256": {
     "gold_annotation_queue_jsonl": "48df1d5634bdacb19d95c62ba2a40333b079b1e667198b7a1bb254185911485a",
-    "silver_eval_set_jsonl": "a70dafef837c89ae18307ecd71d2e8bba5593d3d6e40a106a0c054bb0b4efbe7",
-    "silver_val_data_jsonl": "d5d6c6fbf91ef4976424196a76673aa98134a6d30ce304e08d798fc20bf1873b",
-    "retrieval_corpus_jsonl": "c84e18b056fc4967040eb422b2cadf7e9457b003ee8e71389521d2106fb68695",
-    "retrieval_index_pkl": "02f94cfab2612c85271780443c27e53d3120687d65c5b87deb3fb9a9af27efa4",
-    "intent_classifier_pkl": "f4f197ed31c345c6cfb1b679c1ee184edb4d4524eb35318142b04b39461225c9",
+    "silver_eval_set_jsonl": "e5890fd53022dcbf968c75a245838f211391ec36cd0ce00631ac180be2b59e18",
+    "silver_val_data_jsonl": "bda240a9aa219628882583074f8f44952009b63de7e6cea7d7fa007c1720bc69",
+    "retrieval_corpus_jsonl": "1193382644472736a43be61e92a84f824b261b8be305a254b971f90f5c8bbed1",
+    "retrieval_index_pkl": "281bad9686a52068e49e7a2ee8e6453748ab258a8be38cdb05170220f23de614",
+    "intent_classifier_pkl": "493957fde23e2c9b5abd9c9719eafb9a04b63938889eeadb820cfda8b8d1320f",
     "dependencies_pyproject_toml": "f0013ab599f86fbad36feeee32634a3f94b5e15d0edb47a90be9a7f9476b946a",
-    "config_yaml": "adc96b5f600e62dea2bfe0952b13d1a58a19941af2bd9a3a42c88be8e4abad47"
+    "config_yaml": "bd484a140a6f6d9cf2dabd9cd18be22c5b9f1e42ac19996046bee1d75dcfc12a"
   },
   "model_specifications": {
     "embedding_model_name": "all-MiniLM-L6-v2",
     "embedding_dimension": 384,
     "classifier_architecture": "SentenceTransformer + Multinomial Logistic Regression (L-BFGS) + Multiclass Temperature Scaling + Centroid Outlier Detector",
-    "calibrated_temperature_t": 0.782,
+    "calibrated_temperature_t": 0.7911,
     "temperature_source": "models/intent_classifier.pkl:scaler.temperature",
+    "temperature_label_provenance": "Fitted via L-BFGS NLL minimization on silver-labelled validation split (data/val/dev_tuning.jsonl, N=156); explicitly NOT human gold labels",
     "llm_provider": "deterministic_grounded_production",
     "prompt_template_version": "v1.0-grounded-audit"
   },
@@ -39,10 +41,10 @@
     "validation_metrics_at_selected_point": {
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.1141,
-      "escalation_rate": 0.8859,
-      "validation_sample_size": 184,
-      "validation_intent_accuracy": 0.7554
+      "auto_handle_rate": 0.1154,
+      "escalation_rate": 0.8846,
+      "validation_sample_size": 156,
+      "validation_intent_accuracy": 0.7564
     }
   },
   "policy_configuration": {

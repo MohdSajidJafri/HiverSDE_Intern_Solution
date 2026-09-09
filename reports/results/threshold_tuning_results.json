@@ -1,17 +1,17 @@
 {
   "selection_objective": "Zero sensitive false auto-handles (hard constraint) with maximum safe auto-handle coverage (least conservative operating point)",
-  "validation_sample_size": 184,
-  "validation_intent_accuracy": 0.7554,
-  "calibrated_temperature_t": 0.782,
+  "validation_sample_size": 156,
+  "validation_intent_accuracy": 0.7564,
+  "calibrated_temperature_t": 0.7911,
   "optimal": {
     "conf_threshold": 0.45,
     "quality_threshold": 0.45,
     "sensitive_false_auto_handle_count": 0,
     "false_auto_handle_count": 0,
     "false_auto_handle_rate": 0.0,
-    "auto_handle_rate": 0.1141,
-    "escalation_rate": 0.8859,
-    "safe_auto_handle_coverage": 0.1141
+    "auto_handle_rate": 0.1154,
+    "escalation_rate": 0.8846,
+    "safe_auto_handle_coverage": 0.1154
   },
   "grid": [
     {
@@ -20,9 +20,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.1141,
-      "escalation_rate": 0.8859,
-      "safe_auto_handle_coverage": 0.1141
+      "auto_handle_rate": 0.1154,
+      "escalation_rate": 0.8846,
+      "safe_auto_handle_coverage": 0.1154
     },
     {
       "conf_threshold": 0.45,
@@ -30,9 +30,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0924,
-      "escalation_rate": 0.9076,
-      "safe_auto_handle_coverage": 0.0924
+      "auto_handle_rate": 0.0833,
+      "escalation_rate": 0.9167,
+      "safe_auto_handle_coverage": 0.0833
     },
     {
       "conf_threshold": 0.45,
@@ -40,9 +40,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0761,
-      "escalation_rate": 0.9239,
-      "safe_auto_handle_coverage": 0.0761
+      "auto_handle_rate": 0.0705,
+      "escalation_rate": 0.9295,
+      "safe_auto_handle_coverage": 0.0705
     },
     {
       "conf_threshold": 0.45,
@@ -50,9 +50,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0652,
-      "escalation_rate": 0.9348,
-      "safe_auto_handle_coverage": 0.0652
+      "auto_handle_rate": 0.0705,
+      "escalation_rate": 0.9295,
+      "safe_auto_handle_coverage": 0.0705
     },
     {
       "conf_threshold": 0.45,
@@ -60,9 +60,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0435,
-      "escalation_rate": 0.9565,
-      "safe_auto_handle_coverage": 0.0435
+      "auto_handle_rate": 0.0641,
+      "escalation_rate": 0.9359,
+      "safe_auto_handle_coverage": 0.0641
     },
     {
       "conf_threshold": 0.45,
@@ -70,9 +70,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0326,
-      "escalation_rate": 0.9674,
-      "safe_auto_handle_coverage": 0.0326
+      "auto_handle_rate": 0.0385,
+      "escalation_rate": 0.9615,
+      "safe_auto_handle_coverage": 0.0385
     },
     {
       "conf_threshold": 0.45,
@@ -80,9 +80,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0326,
-      "escalation_rate": 0.9674,
-      "safe_auto_handle_coverage": 0.0326
+      "auto_handle_rate": 0.0192,
+      "escalation_rate": 0.9808,
+      "safe_auto_handle_coverage": 0.0192
     },
     {
       "conf_threshold": 0.5,
@@ -90,9 +90,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0924,
-      "escalation_rate": 0.9076,
-      "safe_auto_handle_coverage": 0.0924
+      "auto_handle_rate": 0.1026,
+      "escalation_rate": 0.8974,
+      "safe_auto_handle_coverage": 0.1026
     },
     {
       "conf_threshold": 0.5,
@@ -100,9 +100,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0815,
-      "escalation_rate": 0.9185,
-      "safe_auto_handle_coverage": 0.0815
+      "auto_handle_rate": 0.0705,
+      "escalation_rate": 0.9295,
+      "safe_auto_handle_coverage": 0.0705
     },
     {
       "conf_threshold": 0.5,
@@ -110,9 +110,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0652,
-      "escalation_rate": 0.9348,
-      "safe_auto_handle_coverage": 0.0652
+      "auto_handle_rate": 0.0577,
+      "escalation_rate": 0.9423,
+      "safe_auto_handle_coverage": 0.0577
     },
     {
       "conf_threshold": 0.5,
@@ -120,9 +120,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0543,
-      "escalation_rate": 0.9457,
-      "safe_auto_handle_coverage": 0.0543
+      "auto_handle_rate": 0.0577,
+      "escalation_rate": 0.9423,
+      "safe_auto_handle_coverage": 0.0577
     },
     {
       "conf_threshold": 0.5,
@@ -130,9 +130,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0326,
-      "escalation_rate": 0.9674,
-      "safe_auto_handle_coverage": 0.0326
+      "auto_handle_rate": 0.0513,
+      "escalation_rate": 0.9487,
+      "safe_auto_handle_coverage": 0.0513
     },
     {
       "conf_threshold": 0.5,
@@ -140,9 +140,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0217,
-      "escalation_rate": 0.9783,
-      "safe_auto_handle_coverage": 0.0217
+      "auto_handle_rate": 0.0321,
+      "escalation_rate": 0.9679,
+      "safe_auto_handle_coverage": 0.0321
     },
     {
       "conf_threshold": 0.5,
@@ -150,9 +150,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0217,
-      "escalation_rate": 0.9783,
-      "safe_auto_handle_coverage": 0.0217
+      "auto_handle_rate": 0.0128,
+      "escalation_rate": 0.9872,
+      "safe_auto_handle_coverage": 0.0128
     },
     {
       "conf_threshold": 0.55,
@@ -160,9 +160,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0761,
-      "escalation_rate": 0.9239,
-      "safe_auto_handle_coverage": 0.0761
+      "auto_handle_rate": 0.1026,
+      "escalation_rate": 0.8974,
+      "safe_auto_handle_coverage": 0.1026
     },
     {
       "conf_threshold": 0.55,
@@ -170,9 +170,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0652,
-      "escalation_rate": 0.9348,
-      "safe_auto_handle_coverage": 0.0652
+      "auto_handle_rate": 0.0705,
+      "escalation_rate": 0.9295,
+      "safe_auto_handle_coverage": 0.0705
     },
     {
       "conf_threshold": 0.55,
@@ -180,9 +180,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0489,
-      "escalation_rate": 0.9511,
-      "safe_auto_handle_coverage": 0.0489
+      "auto_handle_rate": 0.0577,
+      "escalation_rate": 0.9423,
+      "safe_auto_handle_coverage": 0.0577
     },
     {
       "conf_threshold": 0.55,
@@ -190,9 +190,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0489,
-      "escalation_rate": 0.9511,
-      "safe_auto_handle_coverage": 0.0489
+      "auto_handle_rate": 0.0577,
+      "escalation_rate": 0.9423,
+      "safe_auto_handle_coverage": 0.0577
     },
     {
       "conf_threshold": 0.55,
@@ -200,9 +200,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0272,
-      "escalation_rate": 0.9728,
-      "safe_auto_handle_coverage": 0.0272
+      "auto_handle_rate": 0.0513,
+      "escalation_rate": 0.9487,
+      "safe_auto_handle_coverage": 0.0513
     },
     {
       "conf_threshold": 0.55,
@@ -210,9 +210,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0163,
-      "escalation_rate": 0.9837,
-      "safe_auto_handle_coverage": 0.0163
+      "auto_handle_rate": 0.0321,
+      "escalation_rate": 0.9679,
+      "safe_auto_handle_coverage": 0.0321
     },
     {
       "conf_threshold": 0.55,
@@ -220,9 +220,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0163,
-      "escalation_rate": 0.9837,
-      "safe_auto_handle_coverage": 0.0163
+      "auto_handle_rate": 0.0128,
+      "escalation_rate": 0.9872,
+      "safe_auto_handle_coverage": 0.0128
     },
     {
       "conf_threshold": 0.6,
@@ -230,9 +230,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0707,
-      "escalation_rate": 0.9293,
-      "safe_auto_handle_coverage": 0.0707
+      "auto_handle_rate": 0.0833,
+      "escalation_rate": 0.9167,
+      "safe_auto_handle_coverage": 0.0833
     },
     {
       "conf_threshold": 0.6,
@@ -240,9 +240,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0652,
-      "escalation_rate": 0.9348,
-      "safe_auto_handle_coverage": 0.0652
+      "auto_handle_rate": 0.0641,
+      "escalation_rate": 0.9359,
+      "safe_auto_handle_coverage": 0.0641
     },
     {
       "conf_threshold": 0.6,
@@ -250,9 +250,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0489,
-      "escalation_rate": 0.9511,
-      "safe_auto_handle_coverage": 0.0489
+      "auto_handle_rate": 0.0513,
+      "escalation_rate": 0.9487,
+      "safe_auto_handle_coverage": 0.0513
     },
     {
       "conf_threshold": 0.6,
@@ -260,9 +260,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0489,
-      "escalation_rate": 0.9511,
-      "safe_auto_handle_coverage": 0.0489
+      "auto_handle_rate": 0.0513,
+      "escalation_rate": 0.9487,
+      "safe_auto_handle_coverage": 0.0513
     },
     {
       "conf_threshold": 0.6,
@@ -270,9 +270,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0272,
-      "escalation_rate": 0.9728,
-      "safe_auto_handle_coverage": 0.0272
+      "auto_handle_rate": 0.0449,
+      "escalation_rate": 0.9551,
+      "safe_auto_handle_coverage": 0.0449
     },
     {
       "conf_threshold": 0.6,
@@ -280,9 +280,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0163,
-      "escalation_rate": 0.9837,
-      "safe_auto_handle_coverage": 0.0163
+      "auto_handle_rate": 0.0321,
+      "escalation_rate": 0.9679,
+      "safe_auto_handle_coverage": 0.0321
     },
     {
       "conf_threshold": 0.6,
@@ -290,9 +290,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0163,
-      "escalation_rate": 0.9837,
-      "safe_auto_handle_coverage": 0.0163
+      "auto_handle_rate": 0.0128,
+      "escalation_rate": 0.9872,
+      "safe_auto_handle_coverage": 0.0128
     },
     {
       "conf_threshold": 0.65,
@@ -300,9 +300,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0598,
-      "escalation_rate": 0.9402,
-      "safe_auto_handle_coverage": 0.0598
+      "auto_handle_rate": 0.0705,
+      "escalation_rate": 0.9295,
+      "safe_auto_handle_coverage": 0.0705
     },
     {
       "conf_threshold": 0.65,
@@ -310,9 +310,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0543,
-      "escalation_rate": 0.9457,
-      "safe_auto_handle_coverage": 0.0543
+      "auto_handle_rate": 0.0513,
+      "escalation_rate": 0.9487,
+      "safe_auto_handle_coverage": 0.0513
     },
     {
       "conf_threshold": 0.65,
@@ -320,9 +320,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.038,
-      "escalation_rate": 0.962,
-      "safe_auto_handle_coverage": 0.038
+      "auto_handle_rate": 0.0449,
+      "escalation_rate": 0.9551,
+      "safe_auto_handle_coverage": 0.0449
     },
     {
       "conf_threshold": 0.65,
@@ -330,9 +330,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.038,
-      "escalation_rate": 0.962,
-      "safe_auto_handle_coverage": 0.038
+      "auto_handle_rate": 0.0449,
+      "escalation_rate": 0.9551,
+      "safe_auto_handle_coverage": 0.0449
     },
     {
       "conf_threshold": 0.65,
@@ -340,9 +340,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0163,
-      "escalation_rate": 0.9837,
-      "safe_auto_handle_coverage": 0.0163
+      "auto_handle_rate": 0.0385,
+      "escalation_rate": 0.9615,
+      "safe_auto_handle_coverage": 0.0385
     },
     {
       "conf_threshold": 0.65,
@@ -350,9 +350,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0109,
-      "escalation_rate": 0.9891,
-      "safe_auto_handle_coverage": 0.0109
+      "auto_handle_rate": 0.0321,
+      "escalation_rate": 0.9679,
+      "safe_auto_handle_coverage": 0.0321
     },
     {
       "conf_threshold": 0.65,
@@ -360,9 +360,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0109,
-      "escalation_rate": 0.9891,
-      "safe_auto_handle_coverage": 0.0109
+      "auto_handle_rate": 0.0128,
+      "escalation_rate": 0.9872,
+      "safe_auto_handle_coverage": 0.0128
     },
     {
       "conf_threshold": 0.7,
@@ -370,9 +370,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0489,
-      "escalation_rate": 0.9511,
-      "safe_auto_handle_coverage": 0.0489
+      "auto_handle_rate": 0.0705,
+      "escalation_rate": 0.9295,
+      "safe_auto_handle_coverage": 0.0705
     },
     {
       "conf_threshold": 0.7,
@@ -380,9 +380,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0435,
-      "escalation_rate": 0.9565,
-      "safe_auto_handle_coverage": 0.0435
+      "auto_handle_rate": 0.0513,
+      "escalation_rate": 0.9487,
+      "safe_auto_handle_coverage": 0.0513
     },
     {
       "conf_threshold": 0.7,
@@ -390,9 +390,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0272,
-      "escalation_rate": 0.9728,
-      "safe_auto_handle_coverage": 0.0272
+      "auto_handle_rate": 0.0449,
+      "escalation_rate": 0.9551,
+      "safe_auto_handle_coverage": 0.0449
     },
     {
       "conf_threshold": 0.7,
@@ -400,9 +400,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0272,
-      "escalation_rate": 0.9728,
-      "safe_auto_handle_coverage": 0.0272
+      "auto_handle_rate": 0.0449,
+      "escalation_rate": 0.9551,
+      "safe_auto_handle_coverage": 0.0449
     },
     {
       "conf_threshold": 0.7,
@@ -410,9 +410,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0163,
-      "escalation_rate": 0.9837,
-      "safe_auto_handle_coverage": 0.0163
+      "auto_handle_rate": 0.0385,
+      "escalation_rate": 0.9615,
+      "safe_auto_handle_coverage": 0.0385
     },
     {
       "conf_threshold": 0.7,
@@ -420,9 +420,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0109,
-      "escalation_rate": 0.9891,
-      "safe_auto_handle_coverage": 0.0109
+      "auto_handle_rate": 0.0321,
+      "escalation_rate": 0.9679,
+      "safe_auto_handle_coverage": 0.0321
     },
     {
       "conf_threshold": 0.7,
@@ -430,9 +430,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0109,
-      "escalation_rate": 0.9891,
-      "safe_auto_handle_coverage": 0.0109
+      "auto_handle_rate": 0.0128,
+      "escalation_rate": 0.9872,
+      "safe_auto_handle_coverage": 0.0128
     },
     {
       "conf_threshold": 0.75,
@@ -440,9 +440,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0489,
-      "escalation_rate": 0.9511,
-      "safe_auto_handle_coverage": 0.0489
+      "auto_handle_rate": 0.0641,
+      "escalation_rate": 0.9359,
+      "safe_auto_handle_coverage": 0.0641
     },
     {
       "conf_threshold": 0.75,
@@ -450,9 +450,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0435,
-      "escalation_rate": 0.9565,
-      "safe_auto_handle_coverage": 0.0435
+      "auto_handle_rate": 0.0449,
+      "escalation_rate": 0.9551,
+      "safe_auto_handle_coverage": 0.0449
     },
     {
       "conf_threshold": 0.75,
@@ -460,9 +460,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0272,
-      "escalation_rate": 0.9728,
-      "safe_auto_handle_coverage": 0.0272
+      "auto_handle_rate": 0.0449,
+      "escalation_rate": 0.9551,
+      "safe_auto_handle_coverage": 0.0449
     },
     {
       "conf_threshold": 0.75,
@@ -470,9 +470,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0272,
-      "escalation_rate": 0.9728,
-      "safe_auto_handle_coverage": 0.0272
+      "auto_handle_rate": 0.0449,
+      "escalation_rate": 0.9551,
+      "safe_auto_handle_coverage": 0.0449
     },
     {
       "conf_threshold": 0.75,
@@ -480,9 +480,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0163,
-      "escalation_rate": 0.9837,
-      "safe_auto_handle_coverage": 0.0163
+      "auto_handle_rate": 0.0385,
+      "escalation_rate": 0.9615,
+      "safe_auto_handle_coverage": 0.0385
     },
     {
       "conf_threshold": 0.75,
@@ -490,9 +490,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0109,
-      "escalation_rate": 0.9891,
-      "safe_auto_handle_coverage": 0.0109
+      "auto_handle_rate": 0.0321,
+      "escalation_rate": 0.9679,
+      "safe_auto_handle_coverage": 0.0321
     },
     {
       "conf_threshold": 0.75,
@@ -500,9 +500,9 @@
       "sensitive_false_auto_handle_count": 0,
       "false_auto_handle_count": 0,
       "false_auto_handle_rate": 0.0,
-      "auto_handle_rate": 0.0109,
-      "escalation_rate": 0.9891,
-      "safe_auto_handle_coverage": 0.0109
+      "auto_handle_rate": 0.0128,
+      "escalation_rate": 0.9872,
+      "safe_auto_handle_coverage": 0.0128
     }
   ]
 }

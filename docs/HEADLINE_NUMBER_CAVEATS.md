@@ -2,26 +2,41 @@
 
 ## Executive Summary
 In our evaluation report, the headline metrics on the 200-sample Silver Development Benchmark show:
-- **Intent Accuracy**: **72.5%** (Stratified) / **90.2%** (Natural Distribution View)
-- **Macro F1**: **41.4%** (Stratified) / **89.2%** (Natural Distribution View)
-- **False Auto-Handle Rate on Sensitive Issues**: **0.0%** on validation tuning (1.0% overall on silver benchmark)
+- **Intent Accuracy**: **75.0%** (Stratified) / **90.5%** (Natural Distribution View)
+- **Macro F1**: **45.0%** (Stratified) / **90.1%** (Natural Distribution View)
+- **False Auto-Handle Rate on Sensitive Issues**: **0.0%** on validation tuning (0.5% overall on silver benchmark: 1/200)
 - **Escalation Rate**: **85.5%**
-- **Safe Auto-Handle Coverage**: **13.5%**
-- **Retrieval Hit@1 / Hit@3 / MRR**: **0.9300**
+- **Safe Auto-Handle Coverage**: **14.0%**
+- **Proxy Retrieval Hit@1**: **63.5%** *(Intent-consistent proxy)*
+- **Proxy Retrieval Hit@3**: **83.0%** *(Intent-consistent proxy)*
+- **Proxy Mean Reciprocal Rank (MRR)**: **0.7258** *(Intent-consistent proxy)*
+- **Threshold Coverage Diagnostic (Sim $\ge$ 0.45)**: **91.0%** *(Retrieval-score diagnostic)*
 - **Unsupported-Claim Rate**: **0.0%**
 
-While these numbers substantially outperform the trivial baseline (8.5% accuracy, 25.0% false auto-handle rate) and simple baseline (57.0% accuracy, 4.5% false auto-handle rate), **presenting these headline metrics without rigorous methodological caveats would be fundamentally misleading.**
+While these numbers substantially outperform the trivial baseline (5.5% accuracy, 23.5% false auto-handle rate) and simple baseline (60.0% accuracy, 3.5% false auto-handle rate), **presenting these headline metrics without rigorous methodological caveats would be fundamentally misleading.**
 
 This document details the critical limitations, trade-offs, and external validity caveats that every hiring evaluator and ML practitioner must understand.
 
 ---
 
-## 1. Class Distribution Disparity & The Two Evaluation Views
+## 1. Intent-Consistent Retrieval Relevance Proxy vs True Human Ground Truth
+- **The Caveat**:
+  The retrieval metrics (Proxy Hit@1: 63.5%, Proxy Hit@3: 83.0%, Proxy MRR: 0.7258) are evaluated using the rule:
+  $$\text{is\_relevant}(e, q) = (e.\text{intent} == q.\text{true\_intent}) \land (\text{len}(e.\text{brand\_reply}) > 10)$$
+- **Why It Must NOT Be Called "Independently Grounded Relevance"**:
+  1. $q.\text{true\_intent}$ in the Silver Development set is still pseudo/silver-labelled via rule-based heuristics.
+  2. Matching intent does not guarantee that the retrieved interaction actually solves the specific issue described by the customer.
+  3. $\text{len}(\text{brand\_reply}) > 10$ only proves the presence of text, not its accuracy, relevance, or resolution quality.
+  4. True human retrieval relevance evaluation requires manual review. We have created the unlabelled queue of 50 queries $\times$ 3 candidates (`reports/annotations/retrieval_relevance_annotation_queue.jsonl`), but its status remains `PENDING_HUMAN_ANNOTATION`. We refuse to fabricate human labels.
+
+---
+
+## 2. Class Distribution Disparity & The Two Evaluation Views
 - **The Caveat**:
   The **Stratified View** evaluates raw unweighted performance across all 10 classes. In real TWCS support traffic, however, classes are heavily skewed: `other_unsupported` accounts for 44.5% of queries, `subscription_billing` accounts for 15.5%, while `service_status_outage` accounts for only 0.5% (1 example).
 - **Why It Misleads**:
-  - The unweighted Macro F1 treats `service_status_outage` (F1: 0.0) and `feature_request_ui` (F1: 0.0) as having equal weight to `subscription_billing` (F1: 83.3%) and `other_unsupported` (F1: 79.3%). This pulls down the headline Stratified F1 to 41.4%, obscuring the model's strong capability on high-volume operational categories.
-  - Conversely, weighting by natural traffic inflates the Natural F1 to 89.2%, which conceals the fact that minority classes with few training examples are frequently misclassified into dominant clusters. Neither number tells the full story alone.
+  - The unweighted Macro F1 treats `service_status_outage` (F1: 0.0) and `feature_request_ui` (F1: 0.0) as having equal weight to `subscription_billing` (F1: 83.3%) and `other_unsupported` (F1: 79.8%). This pulls down the headline Stratified F1 to 45.0%, obscuring the model's strong capability on high-volume operational categories.
+  - Conversely, weighting by natural traffic inflates the Natural F1 to 90.1%, which conceals the fact that minority classes with few training examples are frequently misclassified into dominant clusters. Neither number tells the full story alone.
 
 ---
 

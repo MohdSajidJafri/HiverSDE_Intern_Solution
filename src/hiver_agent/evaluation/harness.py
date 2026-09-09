@@ -158,40 +158,67 @@ class EvaluationHarness:
         )
 
         # -------------------------------------------------------------
-        # 3. RETRIEVAL & EVIDENCE QUALITY METRICS (REAL Hit@K & MRR)
+        # 3. RETRIEVAL EVALUATION HIERARCHY (3 SEPARATE MEASUREMENTS)
         # -------------------------------------------------------------
-        hit_at_1_count = 0
-        hit_at_3_count = 0
-        mrr_sum = 0.0
+        # Measurement 1: Intent-Consistent Retrieval Relevance Proxy
+        # Rule: (e.intent == q.true_intent) AND (len(e.brand_reply) > 10)
+        # Explicitly named and reported as a proxy, NOT human-grounded relevance.
+        proxy_hit_1_count = 0
+        proxy_hit_3_count = 0
+        proxy_mrr_sum = 0.0
+        first_proxy_rank_distribution = {1: 0, 2: 0, 3: 0, "not_in_top_3": 0}
+
+        # Measurement 2: Threshold Coverage Diagnostic (similarity >= 0.45)
+        # Clearly labeled as a retrieval-score diagnostic, NOT relevance ground truth.
+        top1_threshold_count = 0
+        top3_threshold_count = 0
         similarities = []
 
         for r, p in zip(gold_records, predictions):
+            q_intent = r.get("true_intent") or r.get("silver_intent", "")
             ev_list = p.get("retrieval", {}).get("evidence", [])
             if not ev_list:
+                first_proxy_rank_distribution["not_in_top_3"] += 1
                 continue
 
             top_sim = float(ev_list[0].get("similarity", 0.0))
             similarities.append(top_sim)
 
-            # Evaluate ranked evidence items up to rank 3
+            # Diagnostic: similarity >= 0.45
+            if top_sim >= 0.45:
+                top1_threshold_count += 1
+            if any(float(ev.get("similarity", 0.0)) >= 0.45 for ev in ev_list[:3]):
+                top3_threshold_count += 1
+
+            # Proxy relevance evaluation
             first_relevant_rank = None
             for rank_idx, ev in enumerate(ev_list[:3], start=1):
-                ev_sim = float(ev.get("similarity", 0.0))
-                # Evidence is relevant if similarity meets retrieval threshold >= 0.45
-                is_relevant = (ev_sim >= 0.45)
-                if is_relevant and first_relevant_rank is None:
+                ev_intent = ev.get("intent", "")
+                ev_reply = (
+                    ev.get("historical_brand_reply", "") 
+                    or ev.get("historical_brand", "") 
+                    or ev.get("brand_reply", "")
+                )
+                is_proxy_relevant = (ev_intent == q_intent) and (len(str(ev_reply).strip()) > 10)
+                if is_proxy_relevant and first_relevant_rank is None:
                     first_relevant_rank = rank_idx
 
             if first_relevant_rank is not None:
+                first_proxy_rank_distribution[first_relevant_rank] += 1
                 if first_relevant_rank == 1:
-                    hit_at_1_count += 1
+                    proxy_hit_1_count += 1
                 if first_relevant_rank <= 3:
-                    hit_at_3_count += 1
-                mrr_sum += 1.0 / first_relevant_rank
+                    proxy_hit_3_count += 1
+                proxy_mrr_sum += 1.0 / first_relevant_rank
+            else:
+                first_proxy_rank_distribution["not_in_top_3"] += 1
 
-        hit_at_1 = hit_at_1_count / n_total if n_total > 0 else 0.0
-        hit_at_3 = hit_at_3_count / n_total if n_total > 0 else 0.0
-        mrr = mrr_sum / n_total if n_total > 0 else 0.0
+        proxy_hit_at_1 = proxy_hit_1_count / n_total if n_total > 0 else 0.0
+        proxy_hit_at_3 = proxy_hit_3_count / n_total if n_total > 0 else 0.0
+        proxy_mrr = proxy_mrr_sum / n_total if n_total > 0 else 0.0
+
+        top1_coverage = top1_threshold_count / n_total if n_total > 0 else 0.0
+        top3_coverage = top3_threshold_count / n_total if n_total > 0 else 0.0
         mean_sim = float(np.mean(similarities)) if similarities else 0.0
 
         # -------------------------------------------------------------
@@ -254,10 +281,43 @@ class EvaluationHarness:
                 "decision_f1": round(float(f1_dec), 4)
             },
             "evidence_retrieval": {
-                "hit_at_1": round(hit_at_1, 4),
-                "hit_at_3": round(hit_at_3, 4),
-                "solution_hit_at_3": round(hit_at_3, 4),
-                "mean_reciprocal_rank": round(mrr, 4),
+                "intent_consistent_proxy": {
+                    "measurement_name": "Intent-Consistent Retrieval Relevance Proxy",
+                    "description": "Candidate intent matches query true intent and candidate has non-empty historical brand reply (>10 chars). Relevance proxy; NOT human-grounded relevance.",
+                    "proxy_hit_at_1": round(proxy_hit_at_1, 4),
+                    "proxy_hit_at_3": round(proxy_hit_at_3, 4),
+                    "proxy_mean_reciprocal_rank": round(proxy_mrr, 4),
+                    "first_relevant_rank_distribution": {
+                        "rank_1": first_proxy_rank_distribution[1],
+                        "rank_2": first_proxy_rank_distribution[2],
+                        "rank_3": first_proxy_rank_distribution[3],
+                        "not_in_top_3": first_proxy_rank_distribution["not_in_top_3"]
+                    }
+                },
+                "threshold_coverage_diagnostic": {
+                    "measurement_name": "Threshold Coverage Diagnostic",
+                    "description": "Retrieval score diagnostic for similarity >= 0.45. Not a measure of true semantic relevance.",
+                    "threshold_applied": 0.45,
+                    "top1_coverage": round(top1_coverage, 4),
+                    "top3_coverage": round(top3_coverage, 4),
+                    "mean_top1_similarity": round(mean_sim, 4)
+                },
+                "human_retrieval_relevance": {
+                    "measurement_name": "Human Retrieval Relevance (Future)",
+                    "description": "Held-out real queries with top-3 retrieved candidates awaiting manual human review (relevant / partially_relevant / irrelevant).",
+                    "status": "PENDING_HUMAN_ANNOTATION",
+                    "annotation_queue_path": "reports/annotations/retrieval_relevance_annotation_queue.jsonl",
+                    "human_hit_at_1": None,
+                    "human_hit_at_3": None,
+                    "human_mrr": None
+                },
+                "proxy_hit_at_1": round(proxy_hit_at_1, 4),
+                "proxy_hit_at_3": round(proxy_hit_at_3, 4),
+                "proxy_mrr": round(proxy_mrr, 4),
+                "hit_at_1": round(proxy_hit_at_1, 4),
+                "hit_at_3": round(proxy_hit_at_3, 4),
+                "solution_hit_at_3": round(proxy_hit_at_3, 4),
+                "mean_reciprocal_rank": round(proxy_mrr, 4),
                 "mean_evidence_similarity": round(mean_sim, 4)
             },
             "reply_generation": {

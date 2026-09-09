@@ -1,0 +1,24 @@
+{
+  "status": "PENDING_HUMAN_ANNOTATION",
+  "total_queries": 50,
+  "total_candidate_pairs": 150,
+  "labeled_count": 0,
+  "pending_count": 150,
+  "schema": {
+    "queue_id": "string",
+    "query_id": "string",
+    "query_customer_text": "string",
+    "query_silver_intent": "string",
+    "retrieved_rank": "int (1..3)",
+    "candidate_customer_tweet_id": "string",
+    "candidate_intent": "string",
+    "candidate_similarity": "float",
+    "candidate_historical_customer": "string",
+    "candidate_brand_reply": "string",
+    "human_relevance_label": "enum: relevant | partially_relevant | irrelevant (unlabeled)",
+    "annotator": "string",
+    "annotation_notes": "string",
+    "status": "string"
+  },
+  "description": "Quarantined queue for future human-grounded retrieval relevance evaluation. Remains PENDING_HUMAN_ANNOTATION until actual human review."
+}

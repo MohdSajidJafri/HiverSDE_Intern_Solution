@@ -85,6 +85,7 @@ class VectorStore:
             results.append({
                 "evidence_id": f"ev_{record.get('brand_tweet_id', idx)}",
                 "similarity": round(score, 4),
+                "intent": record.get("intent", record.get("metadata", {}).get("intent", "other_unsupported")),
                 "historical_customer": record["customer_text"],
                 "historical_brand_reply": record["brand_reply"],
                 "conversation_id": record.get("conversation_id", ""),

@@ -57,30 +57,34 @@ Raw Twitter records are individual tweets, not structured dialogues. To reconstr
 
 ---
 
-## 6. Leakage & Split Protocol
+## 6. 4-Way Quarantine & Split Protocol
 The dataset of 2,328 reconstructed `@SpotifyCares` interaction pairs is partitioned across 1,352 isolated connected components of the `(customer_author_id, conversation_id)` bipartite graph:
 
-1. **Retrieval & Training Corpus (`data/processed/retrieval_corpus.jsonl`)**:
-   - 1,754 interaction pairs from 1,052 disjoint components.
+1. **Quarantined Gold Candidate Queue (`data/gold/gold_annotation_queue.jsonl` & `.csv`)**:
+   - 200 real customer inquiries from 200 disjoint components (components 1–200).
+   - Strictly quarantined with blank `gold_intent = ""` and `ground_truth_decision = ""`.
+   - Permanently excluded from training, tuning, calibration, and development evaluation.
+
+2. **Silver Development Benchmark (`data/interim/silver_eval_set.jsonl` & `data/gold/gold_messages.jsonl`)**:
+   - 200 real customer inquiries from 200 separate disjoint components (components 201–400).
+   - Explicitly tagged `evaluation_tier: "SILVER_DEVELOPMENT"`, `is_human_annotated_gold: False`.
+   - Used for reproducible automated development evaluation without fraudulent claims of human annotation.
+
+3. **Quarantined Validation Split (`data/val/dev_tuning.jsonl`)**:
+   - 156 interaction pairs from 100 disjoint components (components 401–500).
+   - Used exclusively for multiclass temperature scaling calibration ($T=0.7911$) and deterministic multi-objective threshold tuning ($\tau_{\text{conf}}=0.45, \tau_{\text{qual}}=0.45$).
+
+4. **Clean Retrieval & Training Corpus (`data/processed/retrieval_corpus.jsonl`)**:
+   - 1,427 interaction pairs from 852 disjoint components (components 501–1,352).
    - Built into dense semantic vector store index (`models/retrieval_index.pkl`).
-   - Supervised classification training data: `data/processed/silver_training_data.jsonl` (1,754 records with `label_provenance: "taxonomy_rules_silver"`).
+   - Supervised classification training data: `data/processed/silver_training_data.jsonl` (1,427 records with `label_provenance: "taxonomy_rules_silver"`).
+   - Every record carries an explicit `intent` metadata tag for retrieval relevance proxy evaluation.
 
-2. **Quarantined Development / Tuning Set (`data/val/dev_tuning.jsonl`)**:
-   - 184 interaction pairs from 100 disjoint components strictly quarantined from the retrieval corpus.
-   - Used exclusively for multiclass temperature scaling calibration ($T=0.7820$) and deterministic multi-objective threshold tuning ($\tau_{\text{conf}}=0.45, \tau_{\text{qual}}=0.45$).
-
-3. **Gold Candidate Queue (`data/gold/gold_annotation_queue.jsonl` & `.csv`)**:
-   - 200 real customer inquiries from 100 disjoint components strictly quarantined from retrieval and training.
-   - Blank `gold_intent` and `ground_truth_decision`, awaiting human review.
-
-4. **Silver Development Benchmark (`data/interim/silver_eval_set.jsonl` & `data/gold/gold_messages.jsonl`)**:
-   - 200 real customer inquiries explicitly tagged `SILVER_DEVELOPMENT_BENCHMARK`.
-   - Used for reproducible automated baseline evaluation without fraudulent claims of human annotation.
-
-5. **Multi-Layer Leakage Audit (`docs/LEAKAGE_AUDIT.md`)**:
-   - Tweet ID overlap: **0**
-   - Thread ID overlap: **0**
-   - Author-day overlap: **0**
+5. **Multi-Layer 4-Way Leakage Audit (`docs/LEAKAGE_AUDIT.md`)**:
+   - Pairwise Tweet ID overlap: **0 across all 6 pairs**
+   - Pairwise Thread ID overlap: **0 across all 6 pairs**
+   - Pairwise Author ID overlap: **0 across all 6 pairs**
+   - Pairwise Author-Day overlap: **0 across all 6 pairs**
    - Conservative near-duplicate semantic screening ($>0.92$ cosine similarity): audited and documented.
 
 ---

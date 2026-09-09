@@ -10,26 +10,55 @@ A primary commitment of this project is absolute methodological honesty:
 
 ---
 
-## 2. Dataset Partition Architecture
-The dataset of 2,328 reconstructed `@SpotifyCares` interaction pairs was partitioned by computing connected components on the `(customer_author_id, conversation_id)` bipartite graph:
+## 2. Four-Way Quarantined Dataset Architecture
+The dataset of 2,328 reconstructed `@SpotifyCares` interaction pairs was partitioned across 1,352 isolated connected components of the `(customer_author_id, conversation_id)` bipartite graph:
 
-1. **Gold Candidate Queue (`data/gold/gold_annotation_queue.jsonl` & `.csv`)**:
-   - **Sample Size**: 200 real customer inquiries from 100 disjoint graph components.
-   - **Status**: Quarantined with blank `gold_intent` and `ground_truth_decision`.
-   - **Integrity**: Completely isolated from training and validation data.
+1. **Candidate Gold Queue (`data/gold/gold_annotation_queue.jsonl` & `.csv`)**:
+   - **Sample Size**: 200 real customer inquiries from 200 disjoint graph components (components 1–200).
+   - **Status**: Strictly quarantined with blank `gold_intent` and `ground_truth_decision`.
+   - **Quarantine Policy**: Completely held out and permanently absent from model training, threshold tuning, temperature calibration, and development evaluation.
 
-2. **Quarantined Validation Split (`data/val/dev_tuning.jsonl`)**:
-   - **Sample Size**: 184 interaction pairs from 100 disjoint graph components.
-   - **Purpose**: Exclusively used for fitting multiclass temperature scaling ($T = 0.7820$) and deterministic multi-objective threshold sweeps ($\tau_{\text{conf}} = 0.45, \tau_{\text{qual}} = 0.45$).
+2. **Silver Development Benchmark (`data/interim/silver_eval_set.jsonl` & `data/gold/gold_messages.jsonl`)**:
+   - **Sample Size**: 200 real customer inquiries from 200 separate disjoint graph components (components 201–400).
+   - **Status**: Interim automated development benchmark (`SILVER_DEVELOPMENT`).
+   - **Role**: Used by `evaluate.py` to evaluate agent performance on held-out queries. Completely disjoint from Gold.
 
-3. **Retrieval & Training Corpus (`data/processed/retrieval_corpus.jsonl`)**:
-   - **Sample Size**: 1,754 interaction pairs from 1,052 disjoint graph components.
-   - **Purpose**: Semantic vector search knowledge base and supervised training examples (`silver_training_data.jsonl`).
+3. **Quarantined Validation Split (`data/val/dev_tuning.jsonl`)**:
+   - **Sample Size**: 156 interaction pairs from 100 disjoint graph components (components 401–500).
+   - **Purpose**: Exclusively used for fitting multiclass temperature scaling ($T = 0.7911$) and deterministic multi-objective threshold sweeps ($\tau_{\text{conf}} = 0.45, \tau_{\text{qual}} = 0.45$).
+   - **Calibration Provenance**: Explicitly documented as silver-label calibration on the validation split.
 
-4. **Multi-Layer Graph Leakage Audit (`docs/LEAKAGE_AUDIT.md`)**:
-   - **Tweet ID Overlap**: **0**
-   - **Thread ID Overlap**: **0**
-   - **Author-Day Overlap**: **0**
+4. **Clean Retrieval & Training Corpus (`data/processed/retrieval_corpus.jsonl`)**:
+   - **Sample Size**: 1,427 interaction pairs from 852 disjoint graph components (components 501–1,352).
+   - **Purpose**: Semantic vector search knowledge base (`models/retrieval_index.pkl`) and supervised training examples (`silver_training_data.jsonl`).
+   - **Metadata**: Every record carries an explicit `intent` tag for retrieval relevance proxy evaluation.
+
+5. **Full 4-Way Overlap Matrix (`docs/LEAKAGE_AUDIT.md`)**:
+   - **Tweet ID Overlap**: **0 across all 6 pairs**
+   - **Thread ID Overlap**: **0 across all 6 pairs**
+   - **Author ID Overlap**: **0 across all 6 pairs**
+   - **Author-Day Overlap**: **0 across all 6 pairs**
+
+---
+
+## 3. Retrieval Evaluation Hierarchy (Three Separate Measurements)
+
+Rather than conflating retrieval similarity with relevance, the evaluation framework implements three separate measurements:
+
+1. **Intent-Consistent Retrieval Relevance Proxy**:
+   - Definition: $\text{is\_relevant}(e, q) = (e.\text{intent} == q.\text{true\_intent}) \land (\text{len}(e.\text{brand\_reply}) > 10)$
+   - Reported Metrics: **Proxy Hit@1** (63.5%), **Proxy Hit@3** (83.0%), **Proxy MRR** (0.7258).
+   - Honest Reporting Policy: Clearly reported as a proxy for retrieval consistency, NOT as human-grounded or human-validated relevance.
+
+2. **Threshold Coverage Diagnostic**:
+   - Definition: Top retrieved candidates meeting the configured similarity threshold ($\text{similarity} \ge 0.45$).
+   - Reported Metric: **Top-1 Coverage** (91.0%), **Top-3 Coverage** (91.0%).
+   - Honest Reporting Policy: Labeled strictly as a retrieval-score diagnostic, not as ground-truth semantic relevance.
+
+3. **Human Retrieval Relevance (Future Benchmark)**:
+   - Queue: `reports/annotations/retrieval_relevance_annotation_queue.jsonl` (50 Silver Dev queries $\times$ 3 retrieved candidates = 150 pairs).
+   - Rubric: Human annotators evaluate candidates on a 3-level scale: `relevant`, `partially_relevant`, `irrelevant`.
+   - Status: Kept strictly as `PENDING_HUMAN_ANNOTATION` with blank labels. No synthetic labels are fabricated.
 
 ---
 

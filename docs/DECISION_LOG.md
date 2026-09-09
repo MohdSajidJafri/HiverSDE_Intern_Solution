@@ -202,3 +202,33 @@ This log records 15 non-obvious engineering and architectural decisions made dur
   3. Establish an explicit tier distinction: a Silver Development Benchmark (`data/interim/silver_eval_set.jsonl`) for automated evaluation, while strictly isolating the Gold Candidate Queue (`data/gold/gold_annotation_queue.jsonl`) with blank labels awaiting manual human review.
 - **Chosen Option**: Alternative 3.
 - **Rationale**: Enables reproducible pipeline evaluation without deceptive claims, while providing a clear human-in-the-loop completion path.
+
+---
+
+### Decision 19: Four-Way Component Disjointness & Permanent Gold Candidate Quarantine
+- **Context**: Using the same 200 inquiries for both the future Gold annotation queue and the development evaluation benchmark risks implicit metric-driven tuning leakage.
+- **Alternatives Considered**:
+  1. Share the same 200 records between the Gold queue and Silver Dev benchmark.
+  2. Partition the graph into four strictly isolated, disjoint sets:
+     - Quarantined Gold Candidate Queue: 200 components (200 inquiries, held out permanently)
+     - Silver Development Benchmark: 200 components (200 inquiries, used for evaluation)
+     - Quarantined Validation Split: 100 components (156 pairs, used for calibration & tuning)
+     - Clean Retrieval & Training Corpus: 852 components (1,427 pairs, used for grounding & training)
+- **Chosen Option**: Alternative 2.
+- **Rationale**: Guarantees true quarantine of the future Gold set. A complete 4-way overlap audit verified 0 tweet ID, 0 thread ID, 0 author ID, and 0 author-day overlap across all 6 pairwise combinations.
+- **Result**: The Gold candidate set has never entered and will never enter model training, calibration, threshold tuning, or development evaluation.
+
+---
+
+### Decision 20: 3-Tier Retrieval Evaluation Hierarchy & Honest Proxy Naming
+- **Context**: When vector search ranks candidates by cosine similarity descending ($s_1 \ge s_2 \ge s_3$), defining relevance as $s_i \ge \tau$ makes rank 1 always the first relevant result, producing identical Hit@1, Hit@3, and MRR. Conversely, defining relevance by intent matching is a proxy, not true human ground truth.
+- **Alternatives Considered**:
+  1. Keep the similarity threshold test and claim high retrieval numbers.
+  2. Call intent matching "independently grounded human semantic relevance".
+  3. Establish three distinct, transparent measurements:
+     - **Intent-Consistent Retrieval Relevance Proxy**: $(\text{candidate.intent} == \text{query.true\_intent}) \land (\text{len}(\text{brand\_reply}) > 10)$, reporting Proxy Hit@1, Proxy Hit@3, Proxy MRR, and first-relevant rank distribution. Explicitly documented as a proxy, NOT human-grounded relevance.
+     - **Threshold Coverage Diagnostic**: Proportion of queries meeting similarity $\ge 0.45$, labeled as a retrieval-score diagnostic.
+     - **Human Retrieval Relevance (Future)**: 50 queries $\times$ top-3 candidates (150 pairs) queued in `reports/annotations/retrieval_relevance_annotation_queue.jsonl` with status `PENDING_HUMAN_ANNOTATION`.
+- **Chosen Option**: Alternative 3.
+- **Rationale**: Enforces methodological honesty: separates retrieval score coverage from intent consistency proxy from human ground truth.
+- **Result**: Decoupled first-relevant rank distribution (rank 1: 127, rank 2: 31, rank 3: 8, not in top 3: 34), yielding mathematically sound Proxy Hit@1: 63.5%, Proxy Hit@3: 83.0%, Proxy MRR: 0.7258, and Threshold Coverage: 91.0%.

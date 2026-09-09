@@ -5,136 +5,124 @@
       "n_classes": 10,
       "evaluation_mode": "dual_view_frozen",
       "observed_class_counts": {
-        "playback_issues": 17,
-        "app_crash_technical": 6,
-        "offline_downloads": 6,
-        "device_connectivity": 6,
-        "playlist_library": 17,
-        "subscription_billing": 31,
-        "account_access_security": 19,
-        "feature_request_ui": 8,
-        "service_status_outage": 1,
-        "other_unsupported": 89
+        "playback_issues": 11,
+        "app_crash_technical": 5,
+        "offline_downloads": 4,
+        "device_connectivity": 5,
+        "playlist_library": 25,
+        "subscription_billing": 23,
+        "account_access_security": 24,
+        "feature_request_ui": 6,
+        "service_status_outage": 2,
+        "other_unsupported": 95
       },
       "observed_class_percentages": {
-        "playback_issues": 0.085,
-        "app_crash_technical": 0.03,
-        "offline_downloads": 0.03,
-        "device_connectivity": 0.03,
-        "playlist_library": 0.085,
-        "subscription_billing": 0.155,
-        "account_access_security": 0.095,
-        "feature_request_ui": 0.04,
-        "service_status_outage": 0.005,
-        "other_unsupported": 0.445
+        "playback_issues": 0.055,
+        "app_crash_technical": 0.025,
+        "offline_downloads": 0.02,
+        "device_connectivity": 0.025,
+        "playlist_library": 0.125,
+        "subscription_billing": 0.115,
+        "account_access_security": 0.12,
+        "feature_request_ui": 0.03,
+        "service_status_outage": 0.01,
+        "other_unsupported": 0.475
       }
     },
     "intent_classification": {
       "stratified_view": {
-        "accuracy": 0.725,
-        "macro_precision": 0.4868,
-        "macro_recall": 0.3908,
-        "macro_f1": 0.4138
+        "accuracy": 0.75,
+        "macro_precision": 0.5737,
+        "macro_recall": 0.4083,
+        "macro_f1": 0.4496
       },
       "natural_distribution_view": {
-        "accuracy": 0.9016,
-        "weighted_precision": 0.8886,
-        "weighted_recall": 0.9016,
-        "weighted_f1": 0.8918
+        "accuracy": 0.9054,
+        "weighted_precision": 0.9017,
+        "weighted_recall": 0.9054,
+        "weighted_f1": 0.9009
       },
       "per_intent": {
         "playback_issues": {
-          "precision": 0.7,
-          "recall": 0.4118,
-          "f1_score": 0.5185,
-          "support": 17
+          "precision": 0.8571,
+          "recall": 0.5455,
+          "f1_score": 0.6667,
+          "support": 11
         },
         "app_crash_technical": {
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1_score": 0.0,
-          "support": 6
+          "precision": 1.0,
+          "recall": 0.2,
+          "f1_score": 0.3333,
+          "support": 5
         },
         "offline_downloads": {
-          "precision": 1.0,
-          "recall": 0.3333,
-          "f1_score": 0.5,
-          "support": 6
+          "precision": 0.5,
+          "recall": 0.25,
+          "f1_score": 0.3333,
+          "support": 4
         },
         "device_connectivity": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 6
+          "support": 5
         },
         "playlist_library": {
-          "precision": 0.7059,
-          "recall": 0.7059,
-          "f1_score": 0.7059,
-          "support": 17
+          "precision": 0.8571,
+          "recall": 0.72,
+          "f1_score": 0.7826,
+          "support": 25
         },
         "subscription_billing": {
-          "precision": 0.8621,
-          "recall": 0.8065,
-          "f1_score": 0.8333,
-          "support": 31
+          "precision": 0.9048,
+          "recall": 0.8261,
+          "f1_score": 0.8636,
+          "support": 23
         },
         "account_access_security": {
-          "precision": 0.9286,
-          "recall": 0.6842,
-          "f1_score": 0.7879,
-          "support": 19
+          "precision": 0.9333,
+          "recall": 0.5833,
+          "f1_score": 0.7179,
+          "support": 24
         },
         "feature_request_ui": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 8
+          "support": 6
         },
         "service_status_outage": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 1
+          "support": 2
         },
         "other_unsupported": {
-          "precision": 0.6719,
-          "recall": 0.9663,
-          "f1_score": 0.7926,
-          "support": 89
+          "precision": 0.6842,
+          "recall": 0.9579,
+          "f1_score": 0.7982,
+          "support": 95
         }
       },
       "confusion_matrix": [
         [
-          7,
+          6,
           0,
           0,
           0,
-          2,
-          1,
           0,
           0,
           0,
-          7
+          0,
+          0,
+          5
         ],
         [
           0,
-          0,
-          0,
-          0,
           1,
           1,
           0,
           0,
-          0,
-          4
-        ],
-        [
-          0,
-          0,
-          2,
-          0,
-          1,
           0,
           0,
           0,
@@ -142,71 +130,11 @@
           3
         ],
         [
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          5
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          12,
-          0,
-          0,
-          0,
-          0,
-          5
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          0,
-          25,
-          0,
-          0,
-          0,
-          6
-        ],
-        [
-          0,
-          0,
-          0,
           0,
           0,
           1,
-          13,
           0,
-          0,
-          5
-        ],
-        [
           2,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          6
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          0,
           0,
           0,
           0,
@@ -218,17 +146,89 @@
           0,
           0,
           0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          18,
+          0,
+          0,
+          0,
+          0,
+          7
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          19,
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
           1,
-          1,
+          0,
+          14,
+          0,
+          0,
+          9
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          6
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2
+        ],
+        [
           1,
           0,
           0,
-          86
+          0,
+          0,
+          2,
+          1,
+          0,
+          0,
+          91
         ]
       ],
       "calibration": {
-        "expected_calibration_error": 0.0863,
-        "brier_score": 0.4115,
+        "expected_calibration_error": 0.0687,
+        "brier_score": 0.3917,
         "reliability_bins": [
           {
             "bin_index": 0,
@@ -260,8 +260,8 @@
             ],
             "bin_size": 1,
             "bin_accuracy": 0.0,
-            "bin_confidence": 0.2632,
-            "calibration_gap": 0.2632
+            "bin_confidence": 0.2613,
+            "calibration_gap": 0.2613
           },
           {
             "bin_index": 3,
@@ -269,10 +269,10 @@
               0.3,
               0.4
             ],
-            "bin_size": 7,
-            "bin_accuracy": 0.7143,
-            "bin_confidence": 0.367,
-            "calibration_gap": 0.3473
+            "bin_size": 5,
+            "bin_accuracy": 0.4,
+            "bin_confidence": 0.3663,
+            "calibration_gap": 0.0337
           },
           {
             "bin_index": 4,
@@ -280,10 +280,10 @@
               0.4,
               0.5
             ],
-            "bin_size": 19,
-            "bin_accuracy": 0.6316,
-            "bin_confidence": 0.4564,
-            "calibration_gap": 0.1752
+            "bin_size": 23,
+            "bin_accuracy": 0.4783,
+            "bin_confidence": 0.4456,
+            "calibration_gap": 0.0326
           },
           {
             "bin_index": 5,
@@ -291,10 +291,10 @@
               0.5,
               0.6
             ],
-            "bin_size": 34,
-            "bin_accuracy": 0.4118,
-            "bin_confidence": 0.5604,
-            "calibration_gap": 0.1486
+            "bin_size": 27,
+            "bin_accuracy": 0.5926,
+            "bin_confidence": 0.5423,
+            "calibration_gap": 0.0503
           },
           {
             "bin_index": 6,
@@ -303,9 +303,9 @@
               0.7
             ],
             "bin_size": 25,
-            "bin_accuracy": 0.64,
-            "bin_confidence": 0.6458,
-            "calibration_gap": 0.0058
+            "bin_accuracy": 0.84,
+            "bin_confidence": 0.6525,
+            "calibration_gap": 0.1875
           },
           {
             "bin_index": 7,
@@ -313,10 +313,10 @@
               0.7,
               0.8
             ],
-            "bin_size": 21,
-            "bin_accuracy": 0.6667,
-            "bin_confidence": 0.7667,
-            "calibration_gap": 0.1001
+            "bin_size": 29,
+            "bin_accuracy": 0.7241,
+            "bin_confidence": 0.7441,
+            "calibration_gap": 0.02
           },
           {
             "bin_index": 8,
@@ -324,10 +324,10 @@
               0.8,
               0.9
             ],
-            "bin_size": 39,
-            "bin_accuracy": 0.7949,
-            "bin_confidence": 0.8536,
-            "calibration_gap": 0.0587
+            "bin_size": 38,
+            "bin_accuracy": 0.8947,
+            "bin_confidence": 0.8451,
+            "calibration_gap": 0.0496
           },
           {
             "bin_index": 9,
@@ -335,29 +335,62 @@
               0.9,
               1.0
             ],
-            "bin_size": 54,
-            "bin_accuracy": 0.9815,
-            "bin_confidence": 0.9511,
-            "calibration_gap": 0.0304
+            "bin_size": 52,
+            "bin_accuracy": 0.8654,
+            "bin_confidence": 0.9433,
+            "calibration_gap": 0.0779
           }
         ]
       }
     },
     "escalation_policy": {
-      "safe_auto_handle_coverage": 0.135,
-      "false_auto_handle_rate": 0.01,
-      "sensitive_false_auto_handles": 2,
+      "safe_auto_handle_coverage": 0.14,
+      "false_auto_handle_rate": 0.005,
+      "sensitive_false_auto_handles": 1,
       "escalation_rate": 0.855,
-      "decision_precision": 0.2807,
-      "decision_recall": 0.96,
-      "decision_f1": 0.4344
+      "decision_precision": 0.269,
+      "decision_recall": 0.9787,
+      "decision_f1": 0.422
     },
     "evidence_retrieval": {
-      "hit_at_1": 0.93,
-      "hit_at_3": 0.93,
-      "solution_hit_at_3": 0.93,
-      "mean_reciprocal_rank": 0.93,
-      "mean_evidence_similarity": 0.6409
+      "intent_consistent_proxy": {
+        "measurement_name": "Intent-Consistent Retrieval Relevance Proxy",
+        "description": "Candidate intent matches query true intent and candidate has non-empty historical brand reply (>10 chars). Relevance proxy; NOT human-grounded relevance.",
+        "proxy_hit_at_1": 0.635,
+        "proxy_hit_at_3": 0.83,
+        "proxy_mean_reciprocal_rank": 0.7258,
+        "first_relevant_rank_distribution": {
+          "rank_1": 127,
+          "rank_2": 31,
+          "rank_3": 8,
+          "not_in_top_3": 34
+        }
+      },
+      "threshold_coverage_diagnostic": {
+        "measurement_name": "Threshold Coverage Diagnostic",
+        "description": "Retrieval score diagnostic for similarity >= 0.45. Not a measure of true semantic relevance.",
+        "threshold_applied": 0.45,
+        "top1_coverage": 0.91,
+        "top3_coverage": 0.91,
+        "mean_top1_similarity": 0.6277
+      },
+      "human_retrieval_relevance": {
+        "measurement_name": "Human Retrieval Relevance (Future)",
+        "description": "Held-out real queries with top-3 retrieved candidates awaiting manual human review (relevant / partially_relevant / irrelevant).",
+        "status": "PENDING_HUMAN_ANNOTATION",
+        "annotation_queue_path": "reports/annotations/retrieval_relevance_annotation_queue.jsonl",
+        "human_hit_at_1": null,
+        "human_hit_at_3": null,
+        "human_mrr": null
+      },
+      "proxy_hit_at_1": 0.635,
+      "proxy_hit_at_3": 0.83,
+      "proxy_mrr": 0.7258,
+      "hit_at_1": 0.635,
+      "hit_at_3": 0.83,
+      "solution_hit_at_3": 0.83,
+      "mean_reciprocal_rank": 0.7258,
+      "mean_evidence_similarity": 0.6277
     },
     "reply_generation": {
       "unsupported_claim_rate": 0.0,
@@ -371,108 +404,180 @@
       "n_classes": 10,
       "evaluation_mode": "dual_view_frozen",
       "observed_class_counts": {
-        "playback_issues": 17,
-        "app_crash_technical": 6,
-        "offline_downloads": 6,
-        "device_connectivity": 6,
-        "playlist_library": 17,
-        "subscription_billing": 31,
-        "account_access_security": 19,
-        "feature_request_ui": 8,
-        "service_status_outage": 1,
-        "other_unsupported": 89
+        "playback_issues": 11,
+        "app_crash_technical": 5,
+        "offline_downloads": 4,
+        "device_connectivity": 5,
+        "playlist_library": 25,
+        "subscription_billing": 23,
+        "account_access_security": 24,
+        "feature_request_ui": 6,
+        "service_status_outage": 2,
+        "other_unsupported": 95
       },
       "observed_class_percentages": {
-        "playback_issues": 0.085,
-        "app_crash_technical": 0.03,
-        "offline_downloads": 0.03,
-        "device_connectivity": 0.03,
-        "playlist_library": 0.085,
-        "subscription_billing": 0.155,
-        "account_access_security": 0.095,
-        "feature_request_ui": 0.04,
-        "service_status_outage": 0.005,
-        "other_unsupported": 0.445
+        "playback_issues": 0.055,
+        "app_crash_technical": 0.025,
+        "offline_downloads": 0.02,
+        "device_connectivity": 0.025,
+        "playlist_library": 0.125,
+        "subscription_billing": 0.115,
+        "account_access_security": 0.12,
+        "feature_request_ui": 0.03,
+        "service_status_outage": 0.01,
+        "other_unsupported": 0.475
       }
     },
     "intent_classification": {
       "stratified_view": {
-        "accuracy": 0.085,
-        "macro_precision": 0.0085,
+        "accuracy": 0.055,
+        "macro_precision": 0.0055,
         "macro_recall": 0.1,
-        "macro_f1": 0.0157
+        "macro_f1": 0.0104
       },
       "natural_distribution_view": {
-        "accuracy": 0.0289,
-        "weighted_precision": 0.0008,
-        "weighted_recall": 0.0289,
-        "weighted_f1": 0.0016
+        "accuracy": 0.011,
+        "weighted_precision": 0.0001,
+        "weighted_recall": 0.011,
+        "weighted_f1": 0.0002
       },
       "per_intent": {
         "playback_issues": {
-          "precision": 0.085,
+          "precision": 0.055,
           "recall": 1.0,
-          "f1_score": 0.1567,
-          "support": 17
+          "f1_score": 0.1043,
+          "support": 11
         },
         "app_crash_technical": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 6
+          "support": 5
         },
         "offline_downloads": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 6
+          "support": 4
         },
         "device_connectivity": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 6
+          "support": 5
         },
         "playlist_library": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 17
+          "support": 25
         },
         "subscription_billing": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 31
+          "support": 23
         },
         "account_access_security": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 19
+          "support": 24
         },
         "feature_request_ui": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 8
+          "support": 6
         },
         "service_status_outage": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 1
+          "support": 2
         },
         "other_unsupported": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 89
+          "support": 95
         }
       },
       "confusion_matrix": [
         [
-          17,
+          11,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          25,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          23,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          24,
           0,
           0,
           0,
@@ -496,7 +601,7 @@
           0
         ],
         [
-          6,
+          2,
           0,
           0,
           0,
@@ -508,79 +613,7 @@
           0
         ],
         [
-          6,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        [
-          17,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        [
-          31,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        [
-          19,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        [
-          8,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        [
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        [
-          89,
+          95,
           0,
           0,
           0,
@@ -593,8 +626,8 @@
         ]
       ],
       "calibration": {
-        "expected_calibration_error": 0.915,
-        "brier_score": 1.83,
+        "expected_calibration_error": 0.945,
+        "brier_score": 1.89,
         "reliability_bins": [
           {
             "bin_index": 0,
@@ -702,23 +735,56 @@
               1.0
             ],
             "bin_size": 200,
-            "bin_accuracy": 0.085,
+            "bin_accuracy": 0.055,
             "bin_confidence": 1.0,
-            "calibration_gap": 0.915
+            "calibration_gap": 0.945
           }
         ]
       }
     },
     "escalation_policy": {
-      "safe_auto_handle_coverage": 0.75,
-      "false_auto_handle_rate": 0.25,
-      "sensitive_false_auto_handles": 50,
+      "safe_auto_handle_coverage": 0.765,
+      "false_auto_handle_rate": 0.235,
+      "sensitive_false_auto_handles": 47,
       "escalation_rate": 0.0,
       "decision_precision": 0.0,
       "decision_recall": 0.0,
       "decision_f1": 0.0
     },
     "evidence_retrieval": {
+      "intent_consistent_proxy": {
+        "measurement_name": "Intent-Consistent Retrieval Relevance Proxy",
+        "description": "Candidate intent matches query true intent and candidate has non-empty historical brand reply (>10 chars). Relevance proxy; NOT human-grounded relevance.",
+        "proxy_hit_at_1": 0.0,
+        "proxy_hit_at_3": 0.0,
+        "proxy_mean_reciprocal_rank": 0.0,
+        "first_relevant_rank_distribution": {
+          "rank_1": 0,
+          "rank_2": 0,
+          "rank_3": 0,
+          "not_in_top_3": 200
+        }
+      },
+      "threshold_coverage_diagnostic": {
+        "measurement_name": "Threshold Coverage Diagnostic",
+        "description": "Retrieval score diagnostic for similarity >= 0.45. Not a measure of true semantic relevance.",
+        "threshold_applied": 0.45,
+        "top1_coverage": 0.0,
+        "top3_coverage": 0.0,
+        "mean_top1_similarity": 0.0
+      },
+      "human_retrieval_relevance": {
+        "measurement_name": "Human Retrieval Relevance (Future)",
+        "description": "Held-out real queries with top-3 retrieved candidates awaiting manual human review (relevant / partially_relevant / irrelevant).",
+        "status": "PENDING_HUMAN_ANNOTATION",
+        "annotation_queue_path": "reports/annotations/retrieval_relevance_annotation_queue.jsonl",
+        "human_hit_at_1": null,
+        "human_hit_at_3": null,
+        "human_mrr": null
+      },
+      "proxy_hit_at_1": 0.0,
+      "proxy_hit_at_3": 0.0,
+      "proxy_mrr": 0.0,
       "hit_at_1": 0.0,
       "hit_at_3": 0.0,
       "solution_hit_at_3": 0.0,
@@ -737,103 +803,103 @@
       "n_classes": 10,
       "evaluation_mode": "dual_view_frozen",
       "observed_class_counts": {
-        "playback_issues": 17,
-        "app_crash_technical": 6,
-        "offline_downloads": 6,
-        "device_connectivity": 6,
-        "playlist_library": 17,
-        "subscription_billing": 31,
-        "account_access_security": 19,
-        "feature_request_ui": 8,
-        "service_status_outage": 1,
-        "other_unsupported": 89
+        "playback_issues": 11,
+        "app_crash_technical": 5,
+        "offline_downloads": 4,
+        "device_connectivity": 5,
+        "playlist_library": 25,
+        "subscription_billing": 23,
+        "account_access_security": 24,
+        "feature_request_ui": 6,
+        "service_status_outage": 2,
+        "other_unsupported": 95
       },
       "observed_class_percentages": {
-        "playback_issues": 0.085,
-        "app_crash_technical": 0.03,
-        "offline_downloads": 0.03,
-        "device_connectivity": 0.03,
-        "playlist_library": 0.085,
-        "subscription_billing": 0.155,
-        "account_access_security": 0.095,
-        "feature_request_ui": 0.04,
-        "service_status_outage": 0.005,
-        "other_unsupported": 0.445
+        "playback_issues": 0.055,
+        "app_crash_technical": 0.025,
+        "offline_downloads": 0.02,
+        "device_connectivity": 0.025,
+        "playlist_library": 0.125,
+        "subscription_billing": 0.115,
+        "account_access_security": 0.12,
+        "feature_request_ui": 0.03,
+        "service_status_outage": 0.01,
+        "other_unsupported": 0.475
       }
     },
     "intent_classification": {
       "stratified_view": {
-        "accuracy": 0.57,
-        "macro_precision": 0.3243,
-        "macro_recall": 0.2076,
-        "macro_f1": 0.2213
+        "accuracy": 0.6,
+        "macro_precision": 0.3349,
+        "macro_recall": 0.2043,
+        "macro_f1": 0.2224
       },
       "natural_distribution_view": {
-        "accuracy": 0.8549,
-        "weighted_precision": 0.8278,
-        "weighted_recall": 0.8549,
-        "weighted_f1": 0.8154
+        "accuracy": 0.8764,
+        "weighted_precision": 0.8696,
+        "weighted_recall": 0.8764,
+        "weighted_f1": 0.8455
       },
       "per_intent": {
         "playback_issues": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 17
+          "support": 11
         },
         "app_crash_technical": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 6
+          "support": 5
         },
         "offline_downloads": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 6
+          "support": 4
         },
         "device_connectivity": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 6
+          "support": 5
         },
         "playlist_library": {
-          "precision": 0.8,
-          "recall": 0.2353,
-          "f1_score": 0.3636,
-          "support": 17
+          "precision": 1.0,
+          "recall": 0.32,
+          "f1_score": 0.4848,
+          "support": 25
         },
         "subscription_billing": {
-          "precision": 0.9286,
-          "recall": 0.4194,
-          "f1_score": 0.5778,
-          "support": 31
+          "precision": 0.8,
+          "recall": 0.3478,
+          "f1_score": 0.4848,
+          "support": 23
         },
         "account_access_security": {
           "precision": 1.0,
-          "recall": 0.4211,
-          "f1_score": 0.5926,
-          "support": 19
+          "recall": 0.375,
+          "f1_score": 0.5455,
+          "support": 24
         },
         "feature_request_ui": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 8
+          "support": 6
         },
         "service_status_outage": {
           "precision": 0.0,
           "recall": 0.0,
           "f1_score": 0.0,
-          "support": 1
+          "support": 2
         },
         "other_unsupported": {
-          "precision": 0.5145,
+          "precision": 0.5491,
           "recall": 1.0,
-          "f1_score": 0.6794,
-          "support": 89
+          "f1_score": 0.709,
+          "support": 95
         }
       },
       "confusion_matrix": [
@@ -843,80 +909,8 @@
           0,
           0,
           0,
-          0,
-          0,
-          0,
-          0,
-          17
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          6
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          6
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          6
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          4,
-          0,
-          0,
-          0,
-          0,
-          13
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          0,
-          13,
-          0,
-          0,
-          0,
-          18
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          0,
           1,
-          8,
+          0,
           0,
           0,
           10
@@ -931,9 +925,82 @@
           0,
           0,
           0,
-          8
+          5
         ],
         [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          5
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          8,
+          0,
+          0,
+          0,
+          0,
+          17
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          8,
+          0,
+          0,
+          0,
+          15
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          9,
+          0,
+          0,
+          15
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          6
+        ],
+        [
+          0,
           0,
           0,
           0,
@@ -942,8 +1009,7 @@
           0,
           0,
           0,
-          0,
-          0
+          1
         ],
         [
           0,
@@ -955,12 +1021,12 @@
           0,
           0,
           0,
-          89
+          95
         ]
       ],
       "calibration": {
-        "expected_calibration_error": 0.0712,
-        "brier_score": 0.603,
+        "expected_calibration_error": 0.0872,
+        "brier_score": 0.5714,
         "reliability_bins": [
           {
             "bin_index": 0,
@@ -979,10 +1045,10 @@
               0.1,
               0.2
             ],
-            "bin_size": 0,
+            "bin_size": 1,
             "bin_accuracy": 0.0,
-            "bin_confidence": 0.0,
-            "calibration_gap": 0.0
+            "bin_confidence": 0.1828,
+            "calibration_gap": 0.1828
           },
           {
             "bin_index": 2,
@@ -990,10 +1056,10 @@
               0.2,
               0.3
             ],
-            "bin_size": 10,
-            "bin_accuracy": 0.2,
-            "bin_confidence": 0.2715,
-            "calibration_gap": 0.0715
+            "bin_size": 9,
+            "bin_accuracy": 0.1111,
+            "bin_confidence": 0.2669,
+            "calibration_gap": 0.1558
           },
           {
             "bin_index": 3,
@@ -1001,10 +1067,10 @@
               0.3,
               0.4
             ],
-            "bin_size": 40,
-            "bin_accuracy": 0.3,
-            "bin_confidence": 0.3546,
-            "calibration_gap": 0.0546
+            "bin_size": 43,
+            "bin_accuracy": 0.3488,
+            "bin_confidence": 0.3509,
+            "calibration_gap": 0.0021
           },
           {
             "bin_index": 4,
@@ -1012,10 +1078,10 @@
               0.4,
               0.5
             ],
-            "bin_size": 38,
-            "bin_accuracy": 0.5,
-            "bin_confidence": 0.4554,
-            "calibration_gap": 0.0446
+            "bin_size": 39,
+            "bin_accuracy": 0.4615,
+            "bin_confidence": 0.4616,
+            "calibration_gap": 0.0001
           },
           {
             "bin_index": 5,
@@ -1023,10 +1089,10 @@
               0.5,
               0.6
             ],
-            "bin_size": 37,
-            "bin_accuracy": 0.5135,
-            "bin_confidence": 0.557,
-            "calibration_gap": 0.0435
+            "bin_size": 44,
+            "bin_accuracy": 0.6818,
+            "bin_confidence": 0.5486,
+            "calibration_gap": 0.1332
           },
           {
             "bin_index": 6,
@@ -1034,10 +1100,10 @@
               0.6,
               0.7
             ],
-            "bin_size": 34,
-            "bin_accuracy": 0.6765,
-            "bin_confidence": 0.6347,
-            "calibration_gap": 0.0417
+            "bin_size": 30,
+            "bin_accuracy": 0.7333,
+            "bin_confidence": 0.6448,
+            "calibration_gap": 0.0885
           },
           {
             "bin_index": 7,
@@ -1045,10 +1111,10 @@
               0.7,
               0.8
             ],
-            "bin_size": 28,
-            "bin_accuracy": 0.9643,
-            "bin_confidence": 0.7515,
-            "calibration_gap": 0.2128
+            "bin_size": 18,
+            "bin_accuracy": 1.0,
+            "bin_confidence": 0.7409,
+            "calibration_gap": 0.2591
           },
           {
             "bin_index": 8,
@@ -1056,10 +1122,10 @@
               0.8,
               0.9
             ],
-            "bin_size": 11,
-            "bin_accuracy": 0.9091,
-            "bin_confidence": 0.8653,
-            "calibration_gap": 0.0438
+            "bin_size": 14,
+            "bin_accuracy": 1.0,
+            "bin_confidence": 0.8279,
+            "calibration_gap": 0.1721
           },
           {
             "bin_index": 9,
@@ -1069,27 +1135,60 @@
             ],
             "bin_size": 2,
             "bin_accuracy": 1.0,
-            "bin_confidence": 0.9123,
-            "calibration_gap": 0.0877
+            "bin_confidence": 0.9179,
+            "calibration_gap": 0.0821
           }
         ]
       }
     },
     "escalation_policy": {
       "safe_auto_handle_coverage": 0.475,
-      "false_auto_handle_rate": 0.045,
-      "sensitive_false_auto_handles": 9,
-      "escalation_rate": 0.48,
-      "decision_precision": 0.4271,
-      "decision_recall": 0.82,
-      "decision_f1": 0.5616
+      "false_auto_handle_rate": 0.035,
+      "sensitive_false_auto_handles": 7,
+      "escalation_rate": 0.49,
+      "decision_precision": 0.4082,
+      "decision_recall": 0.8511,
+      "decision_f1": 0.5517
     },
     "evidence_retrieval": {
-      "hit_at_1": 0.295,
-      "hit_at_3": 0.295,
-      "solution_hit_at_3": 0.295,
-      "mean_reciprocal_rank": 0.295,
-      "mean_evidence_similarity": 0.4243
+      "intent_consistent_proxy": {
+        "measurement_name": "Intent-Consistent Retrieval Relevance Proxy",
+        "description": "Candidate intent matches query true intent and candidate has non-empty historical brand reply (>10 chars). Relevance proxy; NOT human-grounded relevance.",
+        "proxy_hit_at_1": 0.0,
+        "proxy_hit_at_3": 0.0,
+        "proxy_mean_reciprocal_rank": 0.0,
+        "first_relevant_rank_distribution": {
+          "rank_1": 0,
+          "rank_2": 0,
+          "rank_3": 0,
+          "not_in_top_3": 200
+        }
+      },
+      "threshold_coverage_diagnostic": {
+        "measurement_name": "Threshold Coverage Diagnostic",
+        "description": "Retrieval score diagnostic for similarity >= 0.45. Not a measure of true semantic relevance.",
+        "threshold_applied": 0.45,
+        "top1_coverage": 0.27,
+        "top3_coverage": 0.27,
+        "mean_top1_similarity": 0.4129
+      },
+      "human_retrieval_relevance": {
+        "measurement_name": "Human Retrieval Relevance (Future)",
+        "description": "Held-out real queries with top-3 retrieved candidates awaiting manual human review (relevant / partially_relevant / irrelevant).",
+        "status": "PENDING_HUMAN_ANNOTATION",
+        "annotation_queue_path": "reports/annotations/retrieval_relevance_annotation_queue.jsonl",
+        "human_hit_at_1": null,
+        "human_hit_at_3": null,
+        "human_mrr": null
+      },
+      "proxy_hit_at_1": 0.0,
+      "proxy_hit_at_3": 0.0,
+      "proxy_mrr": 0.0,
+      "hit_at_1": 0.0,
+      "hit_at_3": 0.0,
+      "solution_hit_at_3": 0.0,
+      "mean_reciprocal_rank": 0.0,
+      "mean_evidence_similarity": 0.4129
     },
     "reply_generation": {
       "unsupported_claim_rate": 0.0,
