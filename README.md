@@ -60,19 +60,19 @@ Evaluated on the frozen silver development evaluation benchmark ($N=200$ real cu
 
 | Metric | Baseline 1 (Trivial) | Baseline 2 (Simple) | Primary Agent (Frozen) |
 |---|---|---|---|
-| **Intent Accuracy (Stratified View)** | 5.5% | 60.0% | **75.0%** |
-| **Intent Macro F1 (Stratified View)** | 1.0% | 22.2% | **45.0%** |
-| **Intent Accuracy (Natural View)** | 1.1% | 87.6% | **90.5%** |
-| **Intent Weighted F1 (Natural View)** | 0.0% | 84.5% | **90.1%** |
-| **Expected Calibration Error (ECE)** | 0.9450 | 0.0872 | **0.0687** |
-| **Brier Calibration Score** | 1.8900 | 0.5710 | **0.3921** |
-| **Safe Auto-Handle Coverage** | 76.5% | 47.5% | **14.0%** |
-| **False Auto-Handle Rate (CRITICAL)** | 23.5% | 3.5% | **0.5%** *(1/200 overall; 0% on sensitive validation)* |
-| **Escalation Rate** | 0.0% | 49.0% | **85.5%** *(Conservative safety posture)* |
-| **Proxy Retrieval Hit@1** | 0.0000 | 0.0000 | **0.6350** *(Intent-consistent proxy)* |
-| **Proxy Retrieval Hit@3** | 0.0000 | 0.0000 | **0.8300** *(Intent-consistent proxy)* |
-| **Proxy Mean Reciprocal Rank (MRR)** | 0.0000 | 0.0000 | **0.7258** *(Intent-consistent proxy)* |
-| **Threshold Coverage Diagnostic (Sim $\ge$ 0.45)** | 0.0% | 27.0% | **91.0%** *(Retrieval-score diagnostic)* |
+| **Intent Accuracy (Stratified)** | 1.0% | 59.5% | **62.5%** |
+| **Intent Macro F1 (Stratified)** | 0.2% | 17.1% | **33.6%** |
+| **Intent Accuracy (Natural View)** | 0.0% | 85.4% | **77.3%** |
+| **Intent Weighted F1 (Natural View)** | 0.0% | 84.8% | **80.8%** |
+| **Expected Calibration Error (ECE)** | 0.9900 | 0.0989 | **0.1070** |
+| **Brier Calibration Score** | 1.9800 | 0.5747 | **0.5212** |
+| **Safe Auto-Handle Coverage** | 63.0% | 38.5% | **11.5%** |
+| **False Auto-Handle Rate (CRITICAL)** | 37.0% | 9.0% | **4.0%** *(1 sensitive false auto)* |
+| **Escalation Rate** | 0.0% | 52.5% | **84.5%** *(Conservative safety posture)* |
+| **Proxy Retrieval Hit@1** | 0.0000 | 0.0000 | **0.5800** *(Intent-consistent proxy)* |
+| **Proxy Retrieval Hit@3** | 0.0000 | 0.0000 | **0.7100** *(Intent-consistent proxy)* |
+| **Proxy Mean Reciprocal Rank (MRR)** | 0.0000 | 0.0000 | **0.6358** *(Intent-consistent proxy)* |
+| **Threshold Coverage Diagnostic (Sim $\ge$ 0.45)** | 0.0% | 27.0% | **92.0%** *(Retrieval-score diagnostic)* |
 | **Unsupported-Claim Rate (Safety)** | 0.0% | 0.0% | **0.0%** *(Strict claim verification)* |
 | **Grounded-Response Rate** | 100.0% | 100.0% | **100.0%** |
 

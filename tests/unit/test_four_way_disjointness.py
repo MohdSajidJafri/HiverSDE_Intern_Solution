@@ -73,12 +73,17 @@ def test_four_way_zero_pairwise_leakage(dataset_partitions):
 
 
 def test_gold_candidates_are_strictly_quarantined(dataset_partitions):
-    """Verify Gold candidate records are blank and strictly quarantined."""
+    """Verify Gold candidate records have valid human annotations and remain strictly quarantined from other splits."""
     gold = dataset_partitions["gold"]
+    valid_intents = {
+        "playback_issues", "app_crash_technical", "offline_downloads", "device_connectivity",
+        "playlist_library", "subscription_billing", "account_access_security",
+        "feature_request_ui", "service_status_outage", "other_unsupported"
+    }
     for r in gold:
-        assert r["gold_intent"] == "", "Gold candidate intent must be unlabelled"
-        assert r["annotator"] == "", "Gold candidate annotator must be blank"
-        assert r["ground_truth_decision"] == "", "Gold candidate decision must be blank"
+        assert r["gold_intent"] in valid_intents, f"Gold intent must be valid, got {r['gold_intent']}"
+        assert r["ground_truth_decision"] in ("AUTO_HANDLE", "ESCALATE"), f"Gold decision must be valid, got {r['ground_truth_decision']}"
+        assert r["annotator"] != "", "Gold annotator must be recorded"
 
     # Verify Gold tweet IDs never appear in training, validation, or silver dev
     gold_tweets = {str(r["customer_tweet_id"]) for r in gold}

@@ -157,39 +157,39 @@ $$\mathbf{200 + 200 + 156 + 1,427 + 190 + 155 = 2,328}$$
 
 ## 6. Empirical Results vs Baselines
 
-The frozen primary system was evaluated against two operational baselines under identical frozen conditions on the 200-sample silver benchmark:
+The frozen primary system was evaluated against two operational baselines under identical frozen conditions on the official 200-sample Human Gold Benchmark (`GOLD_HUMAN`):
 
 ### Headline Results Table
 
 | Evaluation Metric | Baseline 1 (Trivial) | Baseline 2 (Simple) | Primary Agent (Frozen) |
 |---|---|---|---|
-| **Intent Accuracy (Stratified)** | 5.5% | 60.0% | **75.0%** |
-| **Intent Macro F1 (Stratified)** | 1.0% | 22.2% | **45.0%** |
-| **Intent Accuracy (Natural View)** | 1.1% | 87.6% | **90.5%** |
-| **Intent Weighted F1 (Natural View)** | 0.0% | 84.5% | **90.1%** |
-| **Expected Calibration Error (ECE)** | 0.9450 | 0.0872 | **0.0687** |
-| **Brier Calibration Score** | 1.8900 | 0.5710 | **0.3921** |
-| **Safe Auto-Handle Coverage** | 76.5% | 47.5% | **14.0%** |
-| **False Auto-Handle Rate (CRITICAL)** | 23.5% | 3.5% | **0.5%** *(1/200 overall; 0% on sensitive validation)* |
-| **Escalation Rate** | 0.0% | 49.0% | **85.5%** *(Conservative safety posture)* |
-| **Proxy Retrieval Hit@1** | 0.0000 | 0.0000 | **0.6350** *(Intent-consistent proxy)* |
-| **Proxy Retrieval Hit@3** | 0.0000 | 0.0000 | **0.8300** *(Intent-consistent proxy)* |
-| **Proxy Mean Reciprocal Rank (MRR)** | 0.0000 | 0.0000 | **0.7258** *(Intent-consistent proxy)* |
-| **Threshold Coverage Diagnostic (Sim $\ge$ 0.45)** | 0.0% | 27.0% | **91.0%** *(Retrieval-score diagnostic)* |
+| **Intent Accuracy (Stratified)** | 1.0% | 59.5% | **62.5%** |
+| **Intent Macro F1 (Stratified)** | 0.2% | 17.1% | **33.6%** |
+| **Intent Accuracy (Natural View)** | 0.0% | 85.4% | **77.3%** |
+| **Intent Weighted F1 (Natural View)** | 0.0% | 84.8% | **80.8%** |
+| **Expected Calibration Error (ECE)** | 0.9900 | 0.0989 | **0.1070** |
+| **Brier Calibration Score** | 1.9800 | 0.5747 | **0.5212** |
+| **Safe Auto-Handle Coverage** | 63.0% | 38.5% | **11.5%** |
+| **False Auto-Handle Rate (CRITICAL)** | 37.0% | 9.0% | **4.0%** *(1 sensitive false auto)* |
+| **Escalation Rate** | 0.0% | 52.5% | **84.5%** *(Conservative safety posture)* |
+| **Proxy Retrieval Hit@1** | 0.0000 | 0.0000 | **0.5800** *(Intent-consistent proxy)* |
+| **Proxy Retrieval Hit@3** | 0.0000 | 0.0000 | **0.7100** *(Intent-consistent proxy)* |
+| **Proxy Mean Reciprocal Rank (MRR)** | 0.0000 | 0.0000 | **0.6358** *(Intent-consistent proxy)* |
+| **Threshold Coverage Diagnostic (Sim $\ge$ 0.45)** | 0.0% | 27.0% | **92.0%** *(Retrieval-score diagnostic)* |
 | **Unsupported-Claim Rate (Safety)** | 0.0% | 0.0% | **0.0%** *(Strict claim verification)* |
 | **Grounded-Response Rate** | 100.0% | 100.0% | **100.0%** |
 
-### Per-Intent Performance (Primary Agent):
-- `subscription_billing`: Precision 86.2%, Recall 80.6%, **F1: 83.3%** (Support: 31)
-- `other_unsupported`: Precision 67.2%, Recall 96.6%, **F1: 79.3%** (Support: 89)
-- `account_access_security`: Precision 92.9%, Recall 68.4%, **F1: 78.8%** (Support: 19)
-- `playlist_library`: Precision 70.6%, Recall 70.6%, **F1: 70.6%** (Support: 17)
-- `playback_issues`: Precision 70.0%, Recall 41.2%, **F1: 51.8%** (Support: 17)
-- `offline_downloads`: Precision 100.0%, Recall 33.3%, **F1: 50.0%** (Support: 6)
-- `app_crash_technical`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 6)
-- `device_connectivity`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 6)
-- `feature_request_ui`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 8)
-- `service_status_outage`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 1)
+### Per-Intent Performance (Primary Agent on Human Gold):
+- `other_unsupported`: Precision 69.3%, Recall 81.5%, **F1: 74.9%** (Support: 108)
+- `account_access_security`: Precision 73.3%, Recall 64.7%, **F1: 68.8%** (Support: 17)
+- `offline_downloads`: Precision 50.0%, Recall 100.0%, **F1: 66.7%** (Support: 1)
+- `subscription_billing`: Precision 61.3%, Recall 63.3%, **F1: 62.3%** (Support: 30)
+- `playlist_library`: Precision 29.4%, Recall 83.3%, **F1: 43.5%** (Support: 6)
+- `playback_issues`: Precision 12.5%, Recall 50.0%, **F1: 20.0%** (Support: 2)
+- `app_crash_technical`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 14)
+- `feature_request_ui`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 12)
+- `service_status_outage`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 9)
+- `device_connectivity`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 1)
 
 ---
 
