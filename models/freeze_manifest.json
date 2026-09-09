@@ -1,34 +1,49 @@
 {
   "freeze_status": "FROZEN",
-  "freeze_timestamp": "2026-09-09T14:55:00Z",
-  "git_commit_sha": "4a0321534a314ba4b19872c3e334123c2a87e9df",
+  "freeze_timestamp": "2026-09-09T15:45:00Z",
+  "git_commit_sha": "947d088b5c11812f0c4e905ae85b556c926c251d",
   "dataset_provenance": {
     "source": "Customer Support on Twitter (twcs.csv)",
     "source_url": "https://huggingface.co/datasets/SunidhiSriram/twcs/resolve/main/twcs.csv",
-    "selected_brand": "SpotifyCares"
+    "selected_brand": "SpotifyCares",
+    "partition_strategy": "connected_components_author_conversation_bipartite_graph",
+    "evaluation_tier": "SILVER_DEVELOPMENT_PENDING_HUMAN_GOLD"
   },
   "file_checksums_sha256": {
-    "gold_messages_jsonl": "e5ab60f0ff06c5c165701832531907607259b17700e1d227b4ccac92d6f1d467",
-    "dev_tuning_jsonl": "50d3d97a29c54cf23ce9695091524636a881bfffdc95257794454fd413c24615",
-    "retrieval_corpus_jsonl": "743b68a1adfea183ccddab2f7af6b1a3140c10b62889246d2deb77f4f2aae1e9",
-    "retrieval_index_pkl": "a0f9db01bf96da17b796862dc31bc3f61a4a304cbca1a6fef8b54318b36a29f7",
-    "intent_classifier_pkl": "2189e5424088eb965e165443f3f0edad45b469945f69b44515135d740a9bf5be",
-    "dependencies_pyproject_toml": "3c3497a6af5824885388eeeb2cf77c69536d3f42860145df02bb53c7c4f9ab08",
+    "gold_annotation_queue_jsonl": "48df1d5634bdacb19d95c62ba2a40333b079b1e667198b7a1bb254185911485a",
+    "silver_eval_set_jsonl": "a70dafef837c89ae18307ecd71d2e8bba5593d3d6e40a106a0c054bb0b4efbe7",
+    "silver_val_data_jsonl": "d5d6c6fbf91ef4976424196a76673aa98134a6d30ce304e08d798fc20bf1873b",
+    "retrieval_corpus_jsonl": "c84e18b056fc4967040eb422b2cadf7e9457b003ee8e71389521d2106fb68695",
+    "retrieval_index_pkl": "02f94cfab2612c85271780443c27e53d3120687d65c5b87deb3fb9a9af27efa4",
+    "intent_classifier_pkl": "f4f197ed31c345c6cfb1b679c1ee184edb4d4524eb35318142b04b39461225c9",
+    "dependencies_pyproject_toml": "f0013ab599f86fbad36feeee32634a3f94b5e15d0edb47a90be9a7f9476b946a",
     "config_yaml": "adc96b5f600e62dea2bfe0952b13d1a58a19941af2bd9a3a42c88be8e4abad47"
   },
   "model_specifications": {
     "embedding_model_name": "all-MiniLM-L6-v2",
     "embedding_dimension": 384,
     "classifier_architecture": "SentenceTransformer + Multinomial Logistic Regression (L-BFGS) + Multiclass Temperature Scaling + Centroid Outlier Detector",
-    "calibrated_temperature_t": 1.15,
-    "llm_provider": "deterministic_grounded_offline_and_gemini_api_dual",
+    "calibrated_temperature_t": 0.782,
+    "temperature_source": "models/intent_classifier.pkl:scaler.temperature",
+    "llm_provider": "deterministic_grounded_production",
     "prompt_template_version": "v1.0-grounded-audit"
   },
   "frozen_thresholds": {
-    "intent_confidence_threshold": 0.55,
-    "evidence_quality_threshold": 0.55,
+    "intent_confidence_threshold": 0.45,
+    "evidence_quality_threshold": 0.45,
     "centroid_novelty_threshold": 0.45,
     "leakage_screening_threshold": 0.92
+  },
+  "threshold_selection_record": {
+    "selection_criterion": "Zero sensitive false auto-handle constraint + maximum auto-handle coverage",
+    "validation_metrics_at_selected_point": {
+      "sensitive_false_auto_handle_count": 0,
+      "false_auto_handle_rate": 0.0,
+      "auto_handle_rate": 0.1141,
+      "escalation_rate": 0.8859,
+      "validation_sample_size": 184,
+      "validation_intent_accuracy": 0.7554
+    }
   },
   "policy_configuration": {
     "sensitive_intents": [
@@ -38,6 +53,7 @@
     "escalate_on_contradiction": true,
     "escalate_on_outlier": true,
     "escalate_on_low_confidence": true,
-    "escalate_on_low_evidence": true
+    "escalate_on_low_evidence": true,
+    "escalate_on_unsupported_claims": true
   }
 }

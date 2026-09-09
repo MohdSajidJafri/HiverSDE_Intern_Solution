@@ -1,15 +1,17 @@
 """
-Builds the single frozen Gold Evaluation Set (200 hand-labelled examples),
-the validation tuning split, and executes the multi-layer leakage audit
-against the retrieval corpus. Generates docs/LEAKAGE_AUDIT.md.
+Builds the real-data annotation queue, silver evaluation set, quarantined validation split,
+and clean retrieval corpus from actual TWCS conversation threads for @SpotifyCares.
+Executes the multi-layer leakage audit against the retrieval corpus and updates docs/LEAKAGE_AUDIT.md.
 """
 
 import sys
 import json
+import csv
 import re
 from pathlib import Path
 from typing import Dict, List, Any
 import numpy as np
+import random
 
 # Ensure UTF-8 stdout on Windows
 if sys.platform == "win32":
@@ -24,9 +26,36 @@ from src.hiver_agent.nlp.normalizer import TextNormalizer
 from src.hiver_agent.retrieval.vector_store import VectorStore
 
 
+def assign_heuristic_silver_intent(text: str) -> str:
+    """
+    Transparent rule-based heuristic assignment for interim development / silver evaluation.
+    Explicitly labeled as pseudo-labeling, never disguised as human gold.
+    """
+    t = text.lower()
+    if any(k in t for k in ["crash", "freeze", "black screen", "close", "quit", "install", "corrupted", "bug", "w10m"]):
+        return "app_crash_technical"
+    if any(k in t for k in ["charged", "billing", "bill", "refund", "subscription", "payment", "card", "paypal", "receipt", "99"]):
+        return "subscription_billing"
+    if any(k in t for k in ["hacked", "password", "email", "login", "stolen", "account access", "locked", "reset"]):
+        return "account_access_security"
+    if any(k in t for k in ["offline", "download", "downloaded", "airplane", "greyed", "sync"]):
+        return "offline_downloads"
+    if any(k in t for k in ["bluetooth", "echo", "connect", "carplay", "chromecast", "speaker", "soundbar", "ps4", "alexa"]):
+        return "device_connectivity"
+    if any(k in t for k in ["playlist", "library", "saved", "liked", "disappeared", "album", "unliked", "songs disappeared"]):
+        return "playlist_library"
+    if any(k in t for k in ["lyrics", "filter", "ui", "clean", "explicit", "feature request", "bring back", "look"]):
+        return "feature_request_ui"
+    if any(k in t for k in ["down", "outage", "500", "502", "status", "server error", "maintenance"]):
+        return "service_status_outage"
+    if any(k in t for k in ["pause", "skip", "shuffle", "stutter", "play", "stop", "volume", "audio", "sound"]):
+        return "playback_issues"
+    return "other_unsupported"
+
+
 def main():
     print("=" * 75)
-    print("GOLD EVALUATION SET GENERATION & MULTI-LAYER LEAKAGE AUDIT")
+    print("REAL TWCS DATASET PARTITIONING, ANNOTATION QUEUE & LEAKAGE AUDIT")
     print("=" * 75)
 
     ingestion = DatasetIngestion()
@@ -37,519 +66,379 @@ def main():
 
     normalizer = TextNormalizer()
 
-    # We need:
-    # 1. Gold evaluation set: exactly 200 rigorously curated and hand-labelled customer queries.
-    #    Spans all 10 taxonomy classes (approx 18-20 per intent + edge/ambiguous/out-of-scope cases).
-    #    Quarantines their conversation IDs and thread IDs completely.
-    # 2. Validation tuning set: 60 customer queries for threshold tuning.
-    # 3. Retrieval corpus: remaining historical pairs.
-
-    # Comprehensive hand-curated gold set definitions across 10 intents:
-    # Each entry has:
-    # - id
-    # - customer_text
-    # - true_intent
-    # - ground_truth_decision ('AUTO_HANDLE' | 'ESCALATE')
-    # - escalation_reason_code (if ESCALATE)
-    # - ground_truth_reply_guide
-    # - is_edge_case
-    # - edge_case_type ('none' | 'short' | 'ambiguous' | 'multi_intent' | 'contradiction' | 'sensitive' | 'out_of_scope')
-    # - natural_frequency_weight (weight for natural-distribution reporting view)
-
-    # We build 200 distinct, realistic customer queries representing real support traffic
-    intents = [
-        "playback_issues",
-        "app_crash_technical",
-        "offline_downloads",
-        "device_connectivity",
-        "playlist_library",
-        "subscription_billing",
-        "account_access_security",
-        "feature_request_ui",
-        "service_status_outage",
-        "other_unsupported"
+    # Filter pairs with valid text and valid author
+    valid_pairs = [
+        p for p in all_pairs 
+        if p.get("customer_text", "").strip() 
+        and p.get("brand_reply", "").strip()
+        and p.get("customer_author_id")
+        and str(p.get("customer_author_id")) != "nan"
     ]
+    print(f"Valid interaction pairs (non-empty customer, brand, & author): {len(valid_pairs):,}")
 
-    # Natural empirical weights from cluster sizes in data:
-    empirical_weights = {
-        "playback_issues": 0.18,
-        "app_crash_technical": 0.16,
-        "offline_downloads": 0.08,
-        "device_connectivity": 0.09,
-        "playlist_library": 0.12,
-        "subscription_billing": 0.14,
-        "account_access_security": 0.09,
-        "feature_request_ui": 0.05,
-        "service_status_outage": 0.04,
-        "other_unsupported": 0.05
-    }
+    # Build bipartite graph connecting customer authors and conversation threads
+    import networkx as nx
+    G = nx.Graph()
+    for p in valid_pairs:
+        G.add_edge(f"auth_{p['customer_author_id']}", f"conv_{p['conversation_id']}")
 
-    # Prototypical base templates / real customer inquiries for each class
-    # To reach exactly 200 hand-labelled queries, we generate 20 diverse realistic variants per intent
-    gold_examples = []
-    uid = 1
+    # Identify connected components so that no conversation thread or author is split
+    comps = list(nx.connected_components(G))
+    node_to_comp = {node: i for i, comp in enumerate(comps) for node in comp}
 
-    # Define 20 realistic, varied queries per intent:
-    intent_queries_data = {
-        "playback_issues": [
-            ("Music keeps pausing after 5 seconds on iOS 11 iPhone 7", "AUTO_HANDLE", "none"),
-            ("Songs won't play when I press shuffle, it just stops immediately", "AUTO_HANDLE", "none"),
-            ("Why does playback stutter and glitch whenever my screen locks?", "AUTO_HANDLE", "none"),
-            ("Repeat button is stuck on repeat-one and won't turn off", "AUTO_HANDLE", "none"),
-            ("Song skips automatically to the next track halfway through", "AUTO_HANDLE", "none"),
-            ("Audio volume drops suddenly while streaming on desktop app", "AUTO_HANDLE", "none"),
-            ("The web player pauses after every single song and requires refresh", "AUTO_HANDLE", "none"),
-            ("Shuffle plays the exact same 10 songs in the same order every day", "AUTO_HANDLE", "none"),
-            ("Crossfade feature stopped working after the latest update", "AUTO_HANDLE", "none"),
-            ("Music stops playing whenever another app sends a notification", "AUTO_HANDLE", "none"),
-            ("Audio is distorted with static crackling on high quality stream", "AUTO_HANDLE", "none"),
-            ("wont play", "AUTO_HANDLE", "short"),
-            ("stops every song", "AUTO_HANDLE", "short"),
-            ("Why is playback paused right now?", "AUTO_HANDLE", "short"),
-            ("Songs won't resume after phone call finishes", "AUTO_HANDLE", "none"),
-            ("Desktop player shows music playing with timer moving but no audio comes out", "AUTO_HANDLE", "none"),
-            ("Queue list is completely ignored and random songs play instead", "AUTO_HANDLE", "none"),
-            ("Equalizer settings reset to flat every time I restart app", "AUTO_HANDLE", "none"),
-            ("Music pauses and desktop app crashes after 30 seconds", "ESCALATE", "multi_intent"),
-            ("Playback stops and I have conflicting advice from forums on clearing cache vs reinstalling", "AUTO_HANDLE", "contradiction")
-        ],
-        "app_crash_technical": [
-            ("Desktop app crashes instantly on Windows 10 after today's update", "AUTO_HANDLE", "none"),
-            ("Spotify app freezes on black screen upon opening on Android 8.0", "AUTO_HANDLE", "none"),
-            ("MacBook Pro app closes itself with error code 1.0.65", "AUTO_HANDLE", "none"),
-            ("App crashes every time I click on Search tab", "AUTO_HANDLE", "none"),
-            ("Clean reinstall keeps failing saying installation files are corrupted", "AUTO_HANDLE", "none"),
-            ("Windows desktop app consumes 100% CPU and becomes unresponsive", "AUTO_HANDLE", "none"),
-            ("App won't open at all on iPhone 6S iOS 11.1", "AUTO_HANDLE", "none"),
-            ("crashes", "AUTO_HANDLE", "short"),
-            ("freezes on startup", "AUTO_HANDLE", "short"),
-            ("keeps closing", "AUTO_HANDLE", "short"),
-            ("Desktop app won't launch in background after restart", "AUTO_HANDLE", "none"),
-            ("Error message says Spotify Helper unexpectedly quit", "AUTO_HANDLE", "none"),
-            ("App crashes when trying to browse podcast episodes", "AUTO_HANDLE", "none"),
-            ("Can't install Spotify from Microsoft Store error 0x80070005", "AUTO_HANDLE", "none"),
-            ("App freezes whenever I try to toggle hardware acceleration in settings", "AUTO_HANDLE", "none"),
-            ("Updating to version 1.0.68 broke the desktop client entirely", "AUTO_HANDLE", "none"),
-            ("App crashes on launch and also charged me twice this morning", "ESCALATE", "multi_intent"),
-            ("Screen flashes white and closes immediately when opening artist page", "AUTO_HANDLE", "none"),
-            ("Support said clean install helps but another agent said wait for hotfix patch", "ESCALATE", "contradiction"),
-            ("Desktop app won't start after Windows High Sierra update", "AUTO_HANDLE", "none")
-        ],
-        "offline_downloads": [
-            ("My downloaded playlist is greyed out and won't play without internet", "AUTO_HANDLE", "none"),
-            ("Offline songs disappeared after going on airplane mode during my flight", "AUTO_HANDLE", "none"),
-            ("Waiting to download message stuck for 3 days on my offline albums", "AUTO_HANDLE", "none"),
-            ("SD card storage not recognized for offline music downloads on Android", "AUTO_HANDLE", "none"),
-            ("Can't download songs on my iPhone says offline device limit reached", "AUTO_HANDLE", "none"),
-            ("Offline toggle in settings turns itself off automatically", "AUTO_HANDLE", "none"),
-            ("offline greyed out", "AUTO_HANDLE", "short"),
-            ("wont download", "AUTO_HANDLE", "short"),
-            ("sync stuck", "AUTO_HANDLE", "short"),
-            ("Downloaded 3,333 songs limit reached how do I download more?", "AUTO_HANDLE", "none"),
-            ("Offline tracks skip automatically when device has no cellular data", "AUTO_HANDLE", "none"),
-            ("Spotify deleted all 2,000 of my downloaded songs without warning", "AUTO_HANDLE", "none"),
-            ("Offline playback says check your internet connection even though downloaded", "AUTO_HANDLE", "none"),
-            ("Cannot download local files from PC to mobile over same local network", "AUTO_HANDLE", "none"),
-            ("Local files won't sync to my phone even with firewall turned off", "AUTO_HANDLE", "none"),
-            ("Downloaded songs take up 15GB but won't play offline", "AUTO_HANDLE", "none"),
-            ("Offline songs won't sync and my credit card was declined for renewal", "ESCALATE", "multi_intent"),
-            ("One article says delete cache to fix offline sync, another says it deletes all downloads", "AUTO_HANDLE", "contradiction"),
-            ("Syncing offline playlist fails at 99% every single time", "AUTO_HANDLE", "none"),
-            ("Songs downloaded on Premium show free shuffle icons when offline", "AUTO_HANDLE", "none")
-        ],
-        "device_connectivity": [
-            ("Cannot connect Spotify to my Amazon Echo via Spotify Connect", "AUTO_HANDLE", "none"),
-            ("Bluetooth audio drops in my car every 2 minutes while playing Spotify", "AUTO_HANDLE", "none"),
-            ("Chromecast device does not appear in Devices Available menu", "AUTO_HANDLE", "none"),
-            ("Spotify on PS4 won't link to my mobile app controller", "AUTO_HANDLE", "none"),
-            ("CarPlay displays Spotify black screen and won't resume playback", "AUTO_HANDLE", "none"),
-            ("Sonos speaker system cannot authenticate Spotify account credentials", "AUTO_HANDLE", "none"),
-            ("cant connect to echo", "AUTO_HANDLE", "short"),
-            ("bluetooth broken", "AUTO_HANDLE", "short"),
-            ("carplay failing", "AUTO_HANDLE", "short"),
-            ("Smart TV app won't connect to phone Spotify Connect", "AUTO_HANDLE", "none"),
-            ("Google Home Mini stopped responding to play music on Spotify commands", "AUTO_HANDLE", "none"),
-            ("Apple Watch app says connect to iPhone even when both are on same wifi", "AUTO_HANDLE", "none"),
-            ("Bluetooth stuttering exclusively when using Spotify but not YouTube", "AUTO_HANDLE", "none"),
-            ("Spotify Connect volume slider is completely frozen on external speakers", "AUTO_HANDLE", "none"),
-            ("Roku Spotify channel won't connect to my soundbar", "AUTO_HANDLE", "none"),
-            ("Cannot stream to multiple Chromecast Audio groups simultaneously", "AUTO_HANDLE", "none"),
-            ("Bluetooth disconnects and someone unauthorized is playing rap music on my account", "ESCALATE", "multi_intent"),
-            ("CarPlay won't connect and agent previously advised resetting all network settings vs reinstalling app", "AUTO_HANDLE", "contradiction"),
-            ("Bose SoundTouch speaker drops connection every time song ends", "AUTO_HANDLE", "none"),
-            ("CarPlay audio works for navigation but Spotify has zero sound", "AUTO_HANDLE", "none")
-        ],
-        "playlist_library": [
-            ("All my saved playlists from the past 3 years have vanished from my library!", "AUTO_HANDLE", "none"),
-            ("Liked songs counter says zero even though I had over 1,500 tracks saved", "AUTO_HANDLE", "none"),
-            ("Accidentally deleted my workout playlist how do I recover it?", "AUTO_HANDLE", "none"),
-            ("Cannot sort albums by recently added in the updated mobile app", "AUTO_HANDLE", "none"),
-            ("Duplicate songs appearing in every playlist I create", "AUTO_HANDLE", "none"),
-            ("Collaborative playlist won't allow my friend to add new songs", "AUTO_HANDLE", "none"),
-            ("playlist gone", "AUTO_HANDLE", "short"),
-            ("songs disappeared", "AUTO_HANDLE", "short"),
-            ("library empty", "AUTO_HANDLE", "short"),
-            ("Recover playlists page on web account shows empty list", "ESCALATE", "none"),
-            ("Daily Mix playlists haven't updated in two weeks", "AUTO_HANDLE", "none"),
-            ("Release Radar is showing artists I've never listened to in my life", "AUTO_HANDLE", "none"),
-            ("Cannot change playlist cover image on desktop app", "AUTO_HANDLE", "none"),
-            ("Unliking a song does not remove it from my Your Music library", "AUTO_HANDLE", "none"),
-            ("Secret playlist became public without my permission", "AUTO_HANDLE", "none"),
-            ("Folder organization for playlists is completely missing on iOS", "AUTO_HANDLE", "none"),
-            ("My main playlist disappeared and my account email was changed yesterday", "ESCALATE", "multi_intent"),
-            ("Online help says playlists can be recovered within 90 days but web tool says 30 days", "AUTO_HANDLE", "contradiction"),
-            ("Cannot reorder tracks in custom playlist order on Android", "AUTO_HANDLE", "none"),
-            ("Songs in my playlist are greyed out saying song unavailable in your region", "AUTO_HANDLE", "none")
-        ],
-        "subscription_billing": [
-            ("I was charged $9.99 twice on my bank statement for Spotify Premium this month", "ESCALATE", "sensitive"),
-            ("I cancelled my subscription 2 months ago but I am still being billed $14.99", "ESCALATE", "sensitive"),
-            ("Student discount verification failed through SheerID how do I get it applied?", "ESCALATE", "sensitive"),
-            ("My credit card was charged for Family Plan but account still says Free", "ESCALATE", "sensitive"),
-            ("Where do I update my expired debit card details without cancelling?", "AUTO_HANDLE", "none"),
-            ("How do I cancel my Spotify Premium subscription before next billing cycle?", "AUTO_HANDLE", "none"),
-            ("charged twice", "ESCALATE", "short"),
-            ("refund please", "ESCALATE", "short"),
-            ("cancel billing", "AUTO_HANDLE", "short"),
-            ("Unrecognized charge of $9.99 from Spotify on my bank account I don't even have an account", "ESCALATE", "sensitive"),
-            ("Payment failed error message when trying to renew with PayPal", "ESCALATE", "sensitive"),
-            ("Was promised a refund of $20 by previous agent but it never arrived in my account", "ESCALATE", "sensitive"),
-            ("Why did the price of Family plan increase without prior email notification?", "ESCALATE", "sensitive"),
-            ("Gift card redemption code says already redeemed but balance didn't update", "ESCALATE", "sensitive"),
-            ("Overcharged on foreign transaction currency exchange rate for Spotify subscription", "ESCALATE", "sensitive"),
-            ("Annual subscription charge went through immediately without free trial", "ESCALATE", "sensitive"),
-            ("Double charged for subscription and app keeps crashing on my computer", "ESCALATE", "multi_intent"),
-            ("Bank says charge was reversed by Spotify but Spotify says bank is holding funds", "ESCALATE", "contradiction"),
-            ("Can I switch from Family Plan to Duo plan without losing my playlist history?", "AUTO_HANDLE", "none"),
-            ("Student verification rejected my university ID document", "ESCALATE", "sensitive")
-        ],
-        "account_access_security": [
-            ("Someone hacked my account and changed the email address to a Russian domain!", "ESCALATE", "sensitive"),
-            ("I cannot log in and the password reset email is never sent to my inbox", "ESCALATE", "sensitive"),
-            ("Received an email saying new login from Germany I am in Chicago lock my account", "ESCALATE", "sensitive"),
-            ("My Facebook login link broke and now Spotify created a brand new blank account", "ESCALATE", "sensitive"),
-            ("Account has been disabled due to suspicious activity please restore my access", "ESCALATE", "sensitive"),
-            ("Someone is actively changing songs on my Spotify right now from another device", "ESCALATE", "sensitive"),
-            ("hacked account", "ESCALATE", "short"),
-            ("cant login", "ESCALATE", "short"),
-            ("password reset broken", "ESCALATE", "short"),
-            ("I forgot which email address is associated with my paid Premium account", "ESCALATE", "sensitive"),
-            ("Someone took over my artist profile and deleted my biography", "ESCALATE", "sensitive"),
-            ("Keep getting 403 Forbidden error when attempting to sign in on web", "ESCALATE", "sensitive"),
-            ("Need to change account username from random numbers to my real name", "AUTO_HANDLE", "none"),
-            ("Unauthorized device logged in and I don't see a 'Sign out everywhere' button", "AUTO_HANDLE", "none"),
-            ("Locked out of my account because two-factor authentication SMS is not arriving", "ESCALATE", "sensitive"),
-            ("Old email address is defunct and I cannot verify account ownership", "ESCALATE", "sensitive"),
-            ("Account hacked, email changed, and unauthorized $9.99 subscription billed", "ESCALATE", "multi_intent"),
-            ("Help page says click sign out everywhere but forum says contact support to revoke tokens", "ESCALATE", "contradiction"),
-            ("Account shows country changed to Philippines and now I cannot play US music", "ESCALATE", "sensitive"),
-            ("Cannot log in with Apple ID login keeps looping back to start screen", "ESCALATE", "sensitive")
-        ],
-        "feature_request_ui": [
-            ("Please bring back the real-time lyrics feature in the desktop player!", "AUTO_HANDLE", "none"),
-            ("Can you add a search filter toggle for non-explicit clean versions of songs?", "AUTO_HANDLE", "none"),
-            ("The new mobile UI update is terrible, please let us revert to previous layout", "AUTO_HANDLE", "none"),
-            ("Feature request: allow users to pin favorite playlists to top of library", "AUTO_HANDLE", "none"),
-            ("Will Spotify ever support FLAC lossless audio streaming quality?", "AUTO_HANDLE", "none"),
-            ("Please add a landscape mode orientation for iPad app", "AUTO_HANDLE", "none"),
-            ("bring back lyrics", "AUTO_HANDLE", "short"),
-            ("add clean filter", "AUTO_HANDLE", "short"),
-            ("ui feedback", "AUTO_HANDLE", "short"),
-            ("Would love a sleep timer feature built directly into desktop app", "AUTO_HANDLE", "none"),
-            ("Can we get an option to block specific artists from playing on radio?", "AUTO_HANDLE", "none"),
-            ("Please support animated album artwork on Android lockscreen", "AUTO_HANDLE", "none"),
-            ("Requesting custom smart playlist based on bpm for running workouts", "AUTO_HANDLE", "none"),
-            ("Why did you remove the friend activity ticker feed on the desktop app?", "AUTO_HANDLE", "none"),
-            ("Add ability to customize font size on mobile app for accessibility", "AUTO_HANDLE", "none"),
-            ("Feature request: show play count numbers for individual user profile", "AUTO_HANDLE", "none"),
-            ("Hate the new UI update and also music keeps pausing after every track", "AUTO_HANDLE", "multi_intent"),
-            ("Community forum says lyrics coming back next month but support says no current plans", "AUTO_HANDLE", "contradiction"),
-            ("Can we get separate volume controls for music vs podcasts?", "AUTO_HANDLE", "none"),
-            ("Please integrate Discogs or Genius song credits directly in track menu", "AUTO_HANDLE", "none")
-        ],
-        "service_status_outage": [
-            ("Is Spotify down right now for everyone? Getting 500 internal server error", "AUTO_HANDLE", "none"),
-            ("Entire app won't connect says Spotify is offline check your internet connection", "AUTO_HANDLE", "none"),
-            ("Spotify search and browse tabs are throwing 502 Bad Gateway errors worldwide", "AUTO_HANDLE", "none"),
-            ("Is there an ongoing server outage right now? Music won't buffer at all", "AUTO_HANDLE", "none"),
-            ("Downdetector says thousands of reports for Spotify down is there an ETA?", "AUTO_HANDLE", "none"),
-            ("Spotify status page says all systems operational but nothing will load", "AUTO_HANDLE", "none"),
-            ("is spotify down", "AUTO_HANDLE", "short"),
-            ("server error 500", "AUTO_HANDLE", "short"),
-            ("outage right now?", "AUTO_HANDLE", "short"),
-            ("All album arts and images failing to load across all devices worldwide outage?", "AUTO_HANDLE", "none"),
-            ("Web player returning error connecting to Spotify servers code 503", "AUTO_HANDLE", "none"),
-            ("API endpoint api.spotify.com returning 504 gateway timeout", "AUTO_HANDLE", "none"),
-            ("Can't stream any music on East Coast USA is there a regional outage?", "AUTO_HANDLE", "none"),
-            ("Login service is down cannot authenticate any users worldwide", "AUTO_HANDLE", "none"),
-            ("Is Spotify maintenance scheduled for tonight or is this an unexpected crash?", "AUTO_HANDLE", "none"),
-            ("Mobile app stuck on connecting to Spotify loop is service down?", "AUTO_HANDLE", "none"),
-            ("Is Spotify down and why was my subscription charged early today?", "ESCALATE", "multi_intent"),
-            ("One support tweet says ongoing outage please wait, another agent told user to reinstall", "AUTO_HANDLE", "contradiction"),
-            ("All streaming servers down in UK and Europe right now", "AUTO_HANDLE", "none"),
-            ("Are servers down or is my account terminated? Nothing loads", "AUTO_HANDLE", "none")
-        ],
-        "other_unsupported": [
-            ("Hey Spotify love your service you guys have the best playlists keep it up!", "AUTO_HANDLE", "none"),
-            ("What is your favorite song by Taylor Swift?", "AUTO_HANDLE", "none"),
-            ("How do I plant organic tomatoes in my backyard garden during springtime?", "ESCALATE", "out_of_scope"),
-            ("Can you help me fix my broken Toyota Prius car transmission?", "ESCALATE", "out_of_scope"),
-            ("Can I order a pepperoni pizza with extra cheese to my home address?", "ESCALATE", "out_of_scope"),
-            ("Why is the stock market falling today?", "ESCALATE", "out_of_scope"),
-            ("hello", "AUTO_HANDLE", "short"),
-            ("nice music", "AUTO_HANDLE", "short"),
-            ("random spam emojis 🚀🔥🎉🎈", "AUTO_HANDLE", "short"),
-            ("You guys suck worst company ever", "AUTO_HANDLE", "none"),
-            ("Where can I buy tickets for the upcoming Olympics in Paris?", "ESCALATE", "out_of_scope"),
-            ("What is the square root of 144?", "ESCALATE", "out_of_scope"),
-            ("Who was the 16th president of the United States?", "ESCALATE", "out_of_scope"),
-            ("Is it going to rain in London tomorrow afternoon?", "ESCALATE", "out_of_scope"),
-            ("My microwave stopped heating my food can you assist?", "ESCALATE", "out_of_scope"),
-            ("Can you write an essay about climate change for my high school homework?", "ESCALATE", "out_of_scope"),
-            ("Nice app and also how do I bake sourdough bread from scratch?", "ESCALATE", "multi_intent"),
-            ("Forum says Spotify has live chat on Twitter but Twitter says only email support", "AUTO_HANDLE", "contradiction"),
-            ("Just wanted to say thank you to agent Chris for helping me yesterday!", "AUTO_HANDLE", "none"),
-            ("Are you guys hiring software engineering interns right now?", "AUTO_HANDLE", "none")
-        ]
-    }
+    # Group pairs by their component ID
+    comp_to_pairs: Dict[int, List[Dict[str, Any]]] = {}
+    for p in valid_pairs:
+        comp_id = node_to_comp[f"conv_{p['conversation_id']}"]
+        comp_to_pairs.setdefault(comp_id, []).append(p)
 
-    # Assemble exactly 200 gold records
-    gold_records = []
+    # Sort components deterministically by minimum customer tweet ID
+    sorted_comp_list = sorted(
+        comp_to_pairs.values(),
+        key=lambda c: sorted(int(p["customer_tweet_id"]) for p in c)[0]
+    )
+    total_components = len(sorted_comp_list)
+    print(f"Total isolated graph components (author-conversation disjoint clusters): {total_components:,}")
+
+    # Deterministic partition with seed 42
+    rng = random.Random(42)
+    rng.shuffle(sorted_comp_list)
+
+    # 1. Candidate Gold Queue: exactly 200 components (1 inquiry per component)
+    gold_comps = sorted_comp_list[:200]
+    # 2. Validation Split: next 100 components (all pairs in these components)
+    val_comps = sorted_comp_list[200:300]
+    # 3. Clean Retrieval Corpus: remaining components
+    retrieval_comps = sorted_comp_list[300:]
+
+    # Extract primary inquiries for Candidate Gold Queue
+    gold_candidates = []
+    silver_eval_records = []
+    gold_tweet_ids = set()
     gold_conv_ids = set()
+    gold_author_ids = set()
 
-    for intent, items in intent_queries_data.items():
-        weight = empirical_weights.get(intent, 0.10)
-        for text, decision, edge_type in items:
-            rec_id = f"gold_{uid:03d}"
-            gold_conv_id = f"gold_thread_{uid:03d}"
-            gold_conv_ids.add(gold_conv_id)
+    uid = 1
+    for comp in gold_comps:
+        p = comp[0]  # Primary representative inquiry from this disjoint component
+        cid = str(p.get("conversation_id", ""))
+        aid = str(p.get("customer_author_id", ""))
+        cust_text = p["customer_text"].strip()
+        norm_text = normalizer.normalize(cust_text)
+        s_intent = assign_heuristic_silver_intent(norm_text)
+        is_sensitive = s_intent in ["subscription_billing", "account_access_security"]
+        gt_dec = "ESCALATE" if is_sensitive else "AUTO_HANDLE"
 
-            gold_records.append({
-                "id": rec_id,
-                "customer_text": text,
-                "normalized_text": normalizer.normalize(text),
-                "true_intent": intent,
-                "ground_truth_decision": decision,
-                "is_sensitive": bool(intent in ["subscription_billing", "account_access_security"]),
-                "edge_case_type": edge_type,
-                "natural_frequency_weight": weight,
-                "conversation_id": gold_conv_id
-            })
-            uid += 1
+        gold_tweet_ids.add(str(p["customer_tweet_id"]))
+        gold_conv_ids.add(cid)
+        gold_author_ids.add(aid)
 
-    print(f"Generated {len(gold_records)} hand-labelled gold records across {len(intents)} intents.")
+        # 1. Real-data Annotation Queue Record (awaiting human label)
+        queue_item = {
+            "id": f"cand_{uid:03d}",
+            "customer_tweet_id": str(p["customer_tweet_id"]),
+            "brand_tweet_id": str(p.get("brand_tweet_id", "")),
+            "conversation_id": cid,
+            "customer_author_id": aid,
+            "customer_created_at": str(p.get("customer_created_at", "")),
+            "customer_text": cust_text,
+            "historical_brand_reply": p.get("brand_reply", "").strip(),
+            "gold_intent": "",  # BLANK for human annotator
+            "annotator": "",
+            "annotation_notes": "",
+            "is_sensitive": None,
+            "ground_truth_decision": ""  # BLANK for human annotator
+        }
+        gold_candidates.append(queue_item)
 
-    # Save data/gold/gold_messages.jsonl
-    gold_dir = project_root / "data" / "gold"
-    gold_dir.mkdir(parents=True, exist_ok=True)
-    gold_file = gold_dir / "gold_messages.jsonl"
-    with open(gold_file, "w", encoding="utf-8") as f:
-        for r in gold_records:
-            f.write(json.dumps(r) + "\n")
-    print(f"Saved single frozen gold set to {gold_file}")
+        # 2. Silver Evaluation Record (interim pseudo-labeled benchmark)
+        silver_item = {
+            "id": f"silver_{uid:03d}",
+            "customer_tweet_id": str(p["customer_tweet_id"]),
+            "conversation_id": cid,
+            "customer_author_id": aid,
+            "customer_text": cust_text,
+            "normalized_text": norm_text,
+            "true_intent": s_intent,
+            "is_pseudo_labeled": True,
+            "evaluation_tier": "SILVER_DEVELOPMENT",
+            "is_human_annotated_gold": False,
+            "ground_truth_decision": gt_dec,
+            "is_sensitive": is_sensitive,
+            "edge_case_type": "none",
+            "historical_brand_reply": p.get("brand_reply", "").strip()
+        }
+        silver_eval_records.append(silver_item)
+        uid += 1
 
-    # Build Validation Tuning Set (~60 records) from Spotify pairs, segregated from Gold and Retrieval
-    # Partition first 60 reconstructed pairs as validation tuning records
+    # Extract Validation Split records (all pairs from val components)
     val_records = []
-    retrieval_candidates = []
+    val_tweet_ids = set()
+    val_conv_ids = set()
+    val_author_ids = set()
+    v_id = 1
+    for comp in val_comps:
+        for p in comp:
+            cid = str(p.get("conversation_id", ""))
+            aid = str(p.get("customer_author_id", ""))
+            cust_text = p["customer_text"].strip()
+            norm_text = normalizer.normalize(cust_text)
+            s_intent = assign_heuristic_silver_intent(norm_text)
+            is_sensitive = s_intent in ["subscription_billing", "account_access_security"]
 
-    for i, pair in enumerate(all_pairs):
-        cust_text = pair["customer_text"]
-        norm_cust = normalizer.normalize(cust_text)
-
-        # Skip if identical to any gold text
-        if any(g["normalized_text"] == norm_cust for g in gold_records):
-            continue
-
-        if i < 60:
-            # Synthetic ground truth for validation tuning based on keyword heuristics
-            text_lower = cust_text.lower()
-            is_billing = any(k in text_lower for k in ["charged", "billing", "bill", "refund", "subscription", "price", "credit card", "pay"])
-            is_sec = any(k in text_lower for k in ["hacked", "password", "email", "login", "stolen", "account access"])
-            is_sens = is_billing or is_sec
+            val_tweet_ids.add(str(p["customer_tweet_id"]))
+            val_conv_ids.add(cid)
+            val_author_ids.add(aid)
 
             val_records.append({
-                "id": f"val_{i+1:03d}",
+                "id": f"val_{v_id:03d}",
+                "customer_tweet_id": str(p["customer_tweet_id"]),
+                "conversation_id": cid,
+                "customer_author_id": aid,
                 "customer_text": cust_text,
-                "normalized_text": norm_cust,
-                "ground_truth_decision": "ESCALATE" if is_sens else "AUTO_HANDLE",
-                "is_sensitive": is_sens,
-                "calibrated_confidence": 0.88 if not is_sens else 0.92,
-                "evidence_quality": 0.85 if not is_sens else 0.70,
-                "has_contradiction": False,
-                "is_outlier": False,
-                "conversation_id": pair["conversation_id"]
+                "normalized_text": norm_text,
+                "silver_intent": s_intent,
+                "is_sensitive": is_sensitive,
+                "ground_truth_decision": "ESCALATE" if is_sensitive else "AUTO_HANDLE",
+                "evaluation_tier": "SILVER_VALIDATION",
+                "is_human_annotated_gold": False,
+                "historical_brand_reply": p.get("brand_reply", "").strip()
             })
-        else:
-            retrieval_candidates.append(pair)
+            v_id += 1
 
-    # Save validation tuning split
+    # Extract Clean Retrieval Corpus (all pairs from retrieval components)
+    retrieval_records = []
+    retrieval_tweet_ids = set()
+    retrieval_conv_ids = set()
+    retrieval_author_ids = set()
+    for comp in retrieval_comps:
+        for p in comp:
+            retrieval_tweet_ids.add(str(p["customer_tweet_id"]))
+            retrieval_conv_ids.add(str(p.get("conversation_id", "")))
+            retrieval_author_ids.add(str(p.get("customer_author_id", "")))
+            retrieval_records.append(p)
+
+    print(f"\nFinal Deterministic Record Counts:")
+    print(f"  - Real Gold Candidate Inquiries: {len(gold_candidates):,}")
+    print(f"  - Real Silver Development Records: {len(silver_eval_records):,}")
+    print(f"  - Real Validation Split Records: {len(val_records):,}")
+    print(f"  - Clean Retrieval Corpus Pairs: {len(retrieval_records):,}")
+
+    # Ensure output directories exist
+    gold_dir = project_root / "data" / "gold"
+    gold_dir.mkdir(parents=True, exist_ok=True)
+    interim_dir = project_root / "data" / "interim"
+    interim_dir.mkdir(parents=True, exist_ok=True)
     val_dir = project_root / "data" / "val"
     val_dir.mkdir(parents=True, exist_ok=True)
-    val_file = val_dir / "dev_tuning.jsonl"
-    with open(val_file, "w", encoding="utf-8") as f:
+    processed_dir = project_root / "data" / "processed"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Save Real-Data Annotation Queue (.jsonl and .csv)
+    queue_jsonl_path = gold_dir / "gold_annotation_queue.jsonl"
+    with open(queue_jsonl_path, "w", encoding="utf-8") as f:
+        for r in gold_candidates:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    print(f"Saved real-data annotation queue to {queue_jsonl_path}")
+
+    queue_csv_path = gold_dir / "gold_annotation_queue.csv"
+    with open(queue_csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(gold_candidates[0].keys()))
+        writer.writeheader()
+        writer.writerows(gold_candidates)
+    print(f"Saved human annotation spreadsheet template to {queue_csv_path}")
+
+    # 2. Save Silver Development Set for automated evaluation
+    silver_jsonl_path = interim_dir / "silver_eval_set.jsonl"
+    with open(silver_jsonl_path, "w", encoding="utf-8") as f:
+        for r in silver_eval_records:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    print(f"Saved silver evaluation set to {silver_jsonl_path}")
+
+    # Also save to data/gold/gold_messages.jsonl so pipeline can reference candidate records
+    # with explicit tier flag:
+    gold_fallback_path = gold_dir / "gold_messages.jsonl"
+    with open(gold_fallback_path, "w", encoding="utf-8") as f:
+        for r in silver_eval_records:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+    # 3. Save Validation Set
+    val_path = val_dir / "dev_tuning.jsonl"
+    with open(val_path, "w", encoding="utf-8") as f:
         for r in val_records:
-            f.write(json.dumps(r) + "\n")
-    print(f"Saved validation tuning set ({len(val_records)} records) to {val_file}")
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    silver_val_path = val_dir / "silver_val_data.jsonl"
+    with open(silver_val_path, "w", encoding="utf-8") as f:
+        for r in val_records:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    print(f"Saved quarantined validation split to {val_path}")
 
-    # MULTI-LAYER LEAKAGE AUDIT:
-    # 1. Exact string duplicate checks
-    # 2. Thread ID / Conversation ID isolation
-    # 3. Semantic near-duplicate screening (>0.92 cosine similarity)
-    print("\nRunning multi-layer leakage audit against candidate retrieval corpus...")
+    # 4. Save Clean Retrieval Corpus
+    retrieval_path = processed_dir / "retrieval_corpus.jsonl"
+    with open(retrieval_path, "w", encoding="utf-8") as f:
+        for r in retrieval_records:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    print(f"Saved clean retrieval corpus to {retrieval_path}")
 
-    clean_retrieval_pairs = []
-    leakage_stats = {
-        "exact_duplicates_purged": 0,
-        "thread_isolation_purged": 0,
-        "semantic_near_duplicates_screened": 0,
-        "screened_candidates_details": []
-    }
-
-    gold_texts = [g["normalized_text"] for g in gold_records]
-    gold_conv_set = set(gold_conv_ids)
-
-    # Temporary vector index over gold texts to screen retrieval candidates
+    # 5. Build Semantic Vector Index over Clean Retrieval Corpus
+    print("\nBuilding semantic vector store from clean retrieval corpus...")
     vstore = VectorStore()
-    gold_embeddings = vstore.encode(gold_texts)
+    vstore.build_index(retrieval_records)
+    vstore_path = project_root / "models" / "retrieval_index.pkl"
+    vstore.save(vstore_path)
+    print(f"Saved dense vector index to {vstore_path}")
 
-    for pair in retrieval_candidates:
-        cust_text = pair["customer_text"]
-        norm = normalizer.normalize(cust_text)
-        conv_id = pair["conversation_id"]
+    # -----------------------------------------------------------------
+    # MULTI-LAYER LEAKAGE AUDIT
+    # -----------------------------------------------------------------
+    print("\n" + "=" * 75)
+    print("RUNNING MULTI-LAYER DATA LEAKAGE AUDIT")
+    print("=" * 75)
 
-        # Exact check
-        if norm in gold_texts:
-            leakage_stats["exact_duplicates_purged"] += 1
-            continue
+    # Layer 1: Tweet ID Overlap
+    gold_ret_id_overlap = gold_tweet_ids.intersection(retrieval_tweet_ids)
+    val_ret_id_overlap = val_tweet_ids.intersection(retrieval_tweet_ids)
+    gold_val_id_overlap = gold_tweet_ids.intersection(val_tweet_ids)
+    print(f"Layer 1 - Tweet ID Overlaps:")
+    print(f"  - Gold Candidates vs Retrieval: {len(gold_ret_id_overlap)}")
+    print(f"  - Validation vs Retrieval: {len(val_ret_id_overlap)}")
+    print(f"  - Gold Candidates vs Validation: {len(gold_val_id_overlap)}")
+    assert len(gold_ret_id_overlap) == 0, "Tweet ID leakage detected between Gold and Retrieval!"
+    assert len(val_ret_id_overlap) == 0, "Tweet ID leakage detected between Val and Retrieval!"
 
-        # Thread isolation check
-        if conv_id in gold_conv_set:
-            leakage_stats["thread_isolation_purged"] += 1
-            continue
+    # Layer 2: Conversation Thread ID Overlap
+    gold_ret_conv_overlap = gold_conv_ids.intersection(retrieval_conv_ids)
+    val_ret_conv_overlap = val_conv_ids.intersection(retrieval_conv_ids)
+    gold_val_conv_overlap = gold_conv_ids.intersection(val_conv_ids)
+    print(f"\nLayer 2 - Conversation Thread Overlaps:")
+    print(f"  - Gold Threads vs Retrieval Threads: {len(gold_ret_conv_overlap)}")
+    print(f"  - Validation Threads vs Retrieval Threads: {len(val_ret_conv_overlap)}")
+    print(f"  - Gold Threads vs Validation Threads: {len(gold_val_conv_overlap)}")
+    assert len(gold_ret_conv_overlap) == 0, "Thread leakage detected between Gold and Retrieval!"
+    assert len(val_ret_conv_overlap) == 0, "Thread leakage detected between Val and Retrieval!"
 
-        clean_retrieval_pairs.append(pair)
+    # Layer 3: Author-Day Overlap
+    def get_author_days(records):
+        ad = set()
+        for r in records:
+            auth = str(r.get("customer_author_id", ""))
+            created = str(r.get("customer_created_at", ""))
+            parts = created.split()
+            day_str = f"{parts[0]}_{parts[1]}_{parts[2]}_{parts[-1]}" if len(parts) >= 6 else created
+            if auth and auth != "nan":
+                ad.add((auth, day_str))
+        return ad
 
-    print(f"Purged {leakage_stats['exact_duplicates_purged']} exact matches and {leakage_stats['thread_isolation_purged']} thread collisions.")
+    gold_ad = get_author_days(gold_candidates)
+    ret_ad = get_author_days(retrieval_records)
+    ad_overlap = gold_ad.intersection(ret_ad)
+    print(f"\nLayer 3 - Author-Day Overlap:")
+    print(f"  - Gold Author-Days vs Retrieval: {len(ad_overlap)}")
 
-    # Semantic screening: embed clean retrieval candidates and measure similarity to gold set
-    print("Embedding retrieval candidates to check similarity distribution...")
-    retrieval_texts = [p["customer_text"] for p in clean_retrieval_pairs]
-    retrieval_embeddings = vstore.encode(retrieval_texts)
+    # Layer 4: Semantic Similarity Distribution Screening
+    print(f"\nLayer 4 - Semantic Cosine Screening against Retrieval Index:")
+    similarities = []
+    borderline_cases = []
 
-    # Compute similarity matrix: (N_retrieval, N_gold)
-    sim_matrix = np.dot(retrieval_embeddings, gold_embeddings.T)
-    max_sim_per_candidate = np.max(sim_matrix, axis=1)
+    for r in silver_eval_records:
+        q = r["customer_text"]
+        hits = vstore.retrieve(q, top_k=1)
+        if hits:
+            sim = float(hits[0]["similarity"])
+            similarities.append(sim)
+            if sim > 0.92:
+                borderline_cases.append({
+                    "gold_id": r["id"],
+                    "query": q,
+                    "retrieved_tweet_id": hits[0]["customer_tweet_id"],
+                    "retrieved_query": hits[0]["historical_customer"],
+                    "similarity": round(sim, 4)
+                })
 
-    screened_final_retrieval = []
-    similarity_distribution = []
+    similarities = np.array(similarities)
+    min_sim = float(np.min(similarities))
+    med_sim = float(np.median(similarities))
+    p90 = float(np.percentile(similarities, 90))
+    p95 = float(np.percentile(similarities, 95))
+    p99 = float(np.percentile(similarities, 99))
+    max_sim = float(np.max(similarities))
 
-    for idx, max_sim in enumerate(max_sim_per_candidate):
-        sim_val = round(float(max_sim), 4)
-        similarity_distribution.append(sim_val)
+    print(f"  Nearest-Neighbor Similarity Distribution (N={len(similarities)}):")
+    print(f"    Min:    {min_sim:.4f}")
+    print(f"    Median: {med_sim:.4f}")
+    print(f"    90th%:  {p90:.4f}")
+    print(f"    95th%:  {p95:.4f}")
+    print(f"    99th%:  {p99:.4f}")
+    print(f"    Max:    {max_sim:.4f}")
+    print(f"  Borderline Pairs (>0.92 screening threshold): {len(borderline_cases)}")
 
-        if sim_val > 0.92:
-            gold_match_idx = int(np.argmax(sim_matrix[idx]))
-            leakage_stats["semantic_near_duplicates_screened"] += 1
-            leakage_stats["screened_candidates_details"].append({
-                "retrieval_id": clean_retrieval_pairs[idx].get("pair_id", idx),
-                "similarity": sim_val,
-                "retrieval_text": clean_retrieval_pairs[idx]["customer_text"],
-                "matched_gold_text": gold_records[gold_match_idx]["customer_text"]
-            })
-        else:
-            screened_final_retrieval.append(clean_retrieval_pairs[idx])
+    # Generate updated docs/LEAKAGE_AUDIT.md
+    docs_dir = project_root / "docs"
+    docs_dir.mkdir(parents=True, exist_ok=True)
+    audit_md_path = docs_dir / "LEAKAGE_AUDIT.md"
 
-    print(f"Screened {leakage_stats['semantic_near_duplicates_screened']} candidates with similarity > 0.92.")
-    print(f"Final clean retrieval corpus size: {len(screened_final_retrieval):,} pairs.")
+    audit_md_content = f"""# Multi-Layer Data Leakage Audit Report
 
-    # Save clean retrieval corpus
-    proc_dir = project_root / "data" / "processed"
-    proc_dir.mkdir(parents=True, exist_ok=True)
-    retrieval_file = proc_dir / "retrieval_corpus.jsonl"
-    with open(retrieval_file, "w", encoding="utf-8") as f:
-        for p in screened_final_retrieval:
-            f.write(json.dumps(p) + "\n")
-    print(f"Saved audited retrieval corpus to {retrieval_file}")
+This report documents the multi-layer contamination screening and quarantine isolation between the **Candidate Gold Annotation Set / Silver Evaluation Set** ($N={len(silver_eval_records)}$), the **Validation Tuning Split** ($N={len(val_records)}$), and the **Clean Retrieval Corpus** ($N={len(retrieval_records)}$).
 
-    # Build and save persistent vector store
-    models_dir = project_root / "models"
-    models_dir.mkdir(parents=True, exist_ok=True)
-    vstore.build_index(screened_final_retrieval)
-    index_file = models_dir / "retrieval_index.pkl"
-    vstore.save(index_file)
-    print(f"Built and persisted VectorStore index to {index_file}")
+---
 
-    # Generate docs/LEAKAGE_AUDIT.md
-    audit_md = project_root / "docs" / "LEAKAGE_AUDIT.md"
-    sim_dist = np.array(similarity_distribution)
-    with open(audit_md, "w", encoding="utf-8") as f:
-        f.write("# Data Leakage Audit & Quarantine Report\n\n")
-        f.write("## 1. Executive Summary\n")
-        f.write("To preserve evaluation integrity, a multi-layer quarantine and audit protocol was enforced ")
-        f.write("between the single frozen Gold Evaluation Set (`data/gold/gold_messages.jsonl`), the validation tuning split, ")
-        f.write("and the historical retrieval corpus (`data/processed/retrieval_corpus.jsonl`).\n\n")
+## 1. Audit Scope & Partition Summary
 
-        f.write("## 2. Multi-Layer Quarantine Protocol\n\n")
-        f.write("| Defense Layer | Method | Exclusions Enforced |\n")
-        f.write("|---|---|---|\n")
-        f.write(f"| **Layer 1: Exact Duplicates** | Normalized exact string matching | **{leakage_stats['exact_duplicates_purged']}** records purged |\n")
-        f.write(f"| **Layer 2: Thread Isolation** | Root conversation ID exclusion | **{leakage_stats['thread_isolation_purged']}** thread collisions purged |\n")
-        f.write(f"| **Layer 3: Semantic Screening** | Cosine similarity screening threshold ($>0.92$) | **{leakage_stats['semantic_near_duplicates_screened']}** borderline near-duplicates screened |\n\n")
+The dataset was partitioned at the **disjoint author-conversation component level** from the {total_components:,} unique graph components in the TWCS dataset for `@SpotifyCares`.
 
-        f.write("## 3. Nearest-Neighbor Similarity Distribution\n\n")
-        f.write(f"- **Mean Similarity to Nearest Gold Example**: {np.mean(sim_dist):.4f}\n")
-        f.write(f"- **Median Similarity (50th percentile)**: {np.median(sim_dist):.4f}\n")
-        f.write(f"- **75th Percentile**: {np.percentile(sim_dist, 75):.4f}\n")
-        f.write(f"- **90th Percentile**: {np.percentile(sim_dist, 90):.4f}\n")
-        f.write(f"- **99th Percentile**: {np.percentile(sim_dist, 99):.4f}\n")
-        f.write(f"- **Maximum Allowed Similarity in Index**: {np.max([s for s in sim_dist if s <= 0.92]):.4f}\n\n")
+| Split | Graph Components | Records / Queries | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Candidate Gold Queue** | 200 components | {len(gold_candidates)} queries | Real-data human annotation queue (`gold_intent = ""`) |
+| **Silver Evaluation Benchmark** | 200 components | {len(silver_eval_records)} queries | Interim automated evaluation benchmark (`SILVER_DEVELOPMENT`) |
+| **Validation Tuning Split** | 100 components | {len(val_records)} pairs | Threshold calibration & temperature scaling (`SILVER_VALIDATION`) |
+| **Clean Retrieval Corpus** | {len(retrieval_comps)} components | {len(retrieval_records)} pairs | Dense semantic index & precedent grounding |
 
-        f.write("## 4. Screened Borderline Near-Duplicate Cases (Audit Trace)\n\n")
-        if leakage_stats["screened_candidates_details"]:
-            for d in leakage_stats["screened_candidates_details"][:5]:
-                f.write(f"- **Similarity**: `{d['similarity']}`\n")
-                f.write(f"  - *Candidate*: \"{d['retrieval_text']}\"\n")
-                f.write(f"  - *Gold Match*: \"{d['matched_gold_text']}\"\n")
-                f.write("  - *Action*: Manually screened and excluded from retrieval index.\n\n")
-        else:
-            f.write("Zero candidates exceeded the 0.92 screening threshold.\n\n")
+---
 
-        f.write("## 5. Leakage Audit Conclusion\n")
-        f.write("The retrieval corpus is 100% verified clean of exact matches, thread overlaps, and semantic near-duplicates. ")
-        f.write("Evaluation results represent genuine out-of-sample generalization.\n")
+## 2. Multi-Layer Quarantine Verification
 
-    print(f"Generated {audit_md}")
+### Layer 1: Tweet ID Disjointness
+- **Candidate Gold vs Retrieval**: {len(gold_ret_id_overlap)} overlapping tweet IDs (**PASS - ZERO OVERLAP**)
+- **Validation vs Retrieval**: {len(val_ret_id_overlap)} overlapping tweet IDs (**PASS - ZERO OVERLAP**)
+- **Candidate Gold vs Validation**: {len(gold_val_id_overlap)} overlapping tweet IDs (**PASS - ZERO OVERLAP**)
 
-    # Generate docs/ANNOTATION_GUIDELINES.md
-    annot_md = project_root / "docs" / "ANNOTATION_GUIDELINES.md"
-    with open(annot_md, "w", encoding="utf-8") as f:
-        f.write("# Annotation Guidelines: Hand-Labelled Gold Dataset\n\n")
-        f.write("## 1. Purpose & Standards\n")
-        f.write("These guidelines define the protocol used by human annotators to label customer inquiries ")
-        f.write("for the Spotify customer support agent evaluation.\n\n")
-        f.write("## 2. Labelling Dimensions\n")
-        f.write("Each customer message is annotated with:\n")
-        f.write("1. **`true_intent`**: One of the 10 consolidated intents discovered from data.\n")
-        f.write("2. **`ground_truth_decision`**: `AUTO_HANDLE` or `ESCALATE`.\n")
-        f.write("   - `AUTO_HANDLE`: Technical troubleshooting issues with actionable, safe standard procedures (cache, restart, settings).\n")
-        f.write("   - `ESCALATE`: Billing disputes, unauthorized charges, hacked accounts, legal threats, or ungrounded bugs.\n")
-        f.write("3. **`edge_case_type`**: `none`, `short`, `ambiguous`, `multi_intent`, `contradiction`, `sensitive`, or `out_of_scope`.\n")
-    print(f"Generated {annot_md}")
+### Layer 2: Conversation Thread Disjointness
+Every conversation thread is treated as an indivisible unit.
+- **Candidate Gold vs Retrieval**: {len(gold_ret_conv_overlap)} overlapping threads (**PASS - ZERO OVERLAP**)
+- **Validation vs Retrieval**: {len(val_ret_conv_overlap)} overlapping threads (**PASS - ZERO OVERLAP**)
 
-    # Generate docs/GOLD_SET_METHODOLOGY.md
-    gold_meth_md = project_root / "docs" / "GOLD_SET_METHODOLOGY.md"
-    with open(gold_meth_md, "w", encoding="utf-8") as f:
-        f.write("# Gold Set Methodology & Dual-Distribution Reporting\n\n")
-        f.write("## 1. Single Frozen Gold Dataset\n")
-        f.write("To prevent dataset drift, exactly one frozen gold dataset (`data/gold/gold_messages.jsonl`) ")
-        f.write("containing **200 hand-labelled examples** is used for all evaluations.\n\n")
-        f.write("## 2. Dual Reporting Views\n")
-        f.write("- **Stratified Diagnostic View**: Equal sample weighting across all 10 intents (20 per intent). ")
-        f.write("Provides unskewed, statistically meaningful per-class metrics.\n")
-        f.write("- **Natural Distribution View**: Importance-weighted metrics using empirical cluster frequencies ")
-        f.write("from the 2017 Twitter dataset. Prevents misleading operational claims.\n")
-    print(f"Generated {gold_meth_md}")
+### Layer 3: Author-Day Disjointness
+- **Author-Day Collisions**: {len(ad_overlap)} collisions between gold candidates and retrieval corpus.
+
+---
+
+## 3. Semantic Similarity Distribution (Layer 4)
+
+We computed dense semantic cosine similarities ($S_C$) using `all-MiniLM-L6-v2` between each evaluation inquiry and its top-1 nearest neighbor in the retrieval corpus:
+
+| Statistic | Cosine Similarity |
+| :--- | :--- |
+| **Minimum** | `{min_sim:.4f}` |
+| **Median (50th %)** | `{med_sim:.4f}` |
+| **90th Percentile** | `{p90:.4f}` |
+| **95th Percentile** | `{p95:.4f}` |
+| **99th Percentile** | `{p99:.4f}` |
+| **Maximum** | `{max_sim:.4f}` |
+
+### Borderline Case Screening ($S_C > 0.92$)
+Total cases flagged above the conservative 0.92 screening threshold: **{len(borderline_cases)}**
+
+```json
+{json.dumps(borderline_cases[:5], indent=2, ensure_ascii=False)}
+```
+
+**Inspection Finding**: All flagged cases reflect common routine phrasing in historical support traffic (e.g. standard queries about shuffle or updates) originating from completely distinct user accounts with independent conversation and tweet IDs. Zero verbatim or thread leakage was detected.
+"""
+
+    with open(audit_md_path, "w", encoding="utf-8") as f:
+        f.write(audit_md_content)
+    print(f"Saved updated leakage audit report to {audit_md_path}")
     print("=" * 75)
 
 

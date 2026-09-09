@@ -45,7 +45,7 @@ def test_escalation_low_confidence():
     policy = EscalationPolicy()
     intent_res = {
         "predicted_intent": "playback_issues",
-        "calibrated_confidence": 0.50,  # below 0.65 threshold
+        "calibrated_confidence": 0.35,  # below authoritative 0.45 threshold
         "is_novelty_outlier": False
     }
     evidence_res = {

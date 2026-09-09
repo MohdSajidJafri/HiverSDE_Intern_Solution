@@ -71,91 +71,89 @@ Rather than importing an artificial generic taxonomy (or BANKING77), we clustere
 
 ## 4. System Architecture
 
-The architecture consists of modular, testable components externalized via `config.yaml`:
+The architecture consists of modular, testable components externalized via `config.yaml` and verified against `models/freeze_manifest.json`:
 1. **Text Normalization**: Strips Twitter `@mentions`, preserves punctuation and emojis, standardizes URLs.
 2. **Calibrated Classifier**:
    - Dense embeddings: `all-MiniLM-L6-v2` (384-d).
-   - Classification head: Multinomial Logistic Regression fitted on diverse training embeddings.
-   - Multiclass Temperature Scaling ($T=0.96$) fitted on validation logits via L-BFGS to calibrate probabilities.
+   - Classification head: Multinomial Logistic Regression fitted on diverse training embeddings (`data/processed/silver_training_data.jsonl`, 1,754 records).
+   - Multiclass Temperature Scaling ($T=0.7820$) fitted on real validation logits via L-BFGS to calibrate probabilities.
    - Auxiliary Centroid Detector: Computes cosine distance to class geometric centroids $\min_k (1 - \cos(\mathbf{x}, \mathbf{c}_k))$ to catch out-of-scope queries ($>0.45$).
 3. **Semantic Evidence Retrieval**:
-   - Vector store indexing 2,268 historical Spotify interaction pairs.
+   - Vector store indexing 1,754 historical Spotify interaction pairs (`models/retrieval_index.pkl`).
    - Top-$K$ retrieval returning historical customer inquiries, brand responses, and full provenance IDs.
 4. **Evidence Quality & Contradiction Layer**:
    - Distinguishes: (a) compatible historical advice, (b) genuinely incompatible advice (e.g. reinstall vs do not reinstall), (c) insufficient evidence.
 5. **Conservative Escalation Engine**:
-   - Evaluates: calibrated confidence $< 0.55$, evidence quality $< 0.55$, incompatible contradictions, sensitive intents, and novelty outliers.
+   - Evaluates: calibrated confidence $< 0.45$, evidence quality $< 0.45$, incompatible contradictions, sensitive intents, and novelty outliers.
 6. **Dual-Generation Interface & Claim Verifier**:
-   - Provider A (`DeterministicGroundedProvider`): Local synthesis for instant, zero-cost 15-minute verification.
-   - Provider B (`GenerativeLLMProvider`): Dynamic synthesis via API with structured JSON output.
+   - Provider A (`DeterministicGroundedProvider`): Primary production grounded synthesis for instant, zero-cost 15-minute verification.
+   - Provider B (`ExternalAPIProvider`): Real REST HTTP adapter to generative API with transparent fallback to Provider A if API keys are unconfigured.
    - Claim Verifier: Sentence-level support checking (`SUPPORTED`, `UNSUPPORTED`, `UNCERTAIN`).
 
 ---
 
 ## 5. Evaluation Methodology & Leakage Prevention
 
-- **Single Frozen Gold Set**: Exactly **200 hand-labelled customer queries** (`data/gold/gold_messages.jsonl`).
+- **Silver Development Benchmark**: 200 real customer inquiries from `@SpotifyCares` (`data/interim/silver_eval_set.jsonl` and `data/gold/gold_messages.jsonl`) used for reproducible automated evaluation.
+- **Quarantined Gold Candidate Queue**: 200 real customer inquiries (`data/gold/gold_annotation_queue.jsonl` & `.csv`) strictly quarantined with blank labels awaiting manual human review.
+- **Quarantined Validation Split**: 184 interaction pairs (`data/val/dev_tuning.jsonl`) used for temperature calibration and multi-objective threshold sweeping.
 - **Dual Evaluation Views**:
-  - **Stratified View**: Equal weighting (20 queries per intent) for diagnostic depth.
-  - **Natural Distribution View**: Importance-weighted using empirical cluster traffic frequencies.
-- **Multi-Layer Leakage Audit**:
-  - Exact duplicates: Purged.
-  - Thread collisions: Complete conversation threads quarantined.
-  - Semantic screening: All retrieval candidates screened against gold set; nearest-neighbor distribution audited in `docs/LEAKAGE_AUDIT.md`.
-- **Pre-Evaluation Freeze**: All parameters locked in `models/freeze_manifest.json` prior to running gold evaluation.
+  - **Stratified View**: Unweighted evaluation for per-class diagnostic fidelity.
+  - **Natural Distribution View**: Importance-weighted using empirical class frequencies observed in the evaluation corpus.
+- **Multi-Layer Graph Leakage Audit (`docs/LEAKAGE_AUDIT.md`)**:
+  - Partitioning by connected components of the `(customer_author_id, conversation_id)` bipartite graph.
+  - Tweet ID overlap: **0**; Thread ID overlap: **0**; Author-day overlap: **0**.
+- **Pre-Evaluation Freeze**: All parameters locked in `models/freeze_manifest.json` prior to running evaluation.
 
 ---
 
 ## 6. Empirical Results vs Baselines
 
-The frozen primary system was evaluated against two operational baselines under identical conditions on the 200-sample gold set:
+The frozen primary system was evaluated against two operational baselines under identical frozen conditions on the 200-sample silver benchmark:
 
 ### Headline Results Table
 
 | Evaluation Metric | Baseline 1 (Trivial) | Baseline 2 (Simple) | Primary Agent (Frozen) |
 |---|---|---|---|
-| **Intent Accuracy (Stratified)** | 10.0% | 22.5% | **56.5%** |
-| **Intent Macro F1 (Stratified)** | 1.8% | 19.0% | **54.6%** |
-| **Intent Accuracy (Natural View)** | 18.0% | 19.1% | **62.5%** |
-| **Intent Weighted F1 (Natural View)** | 5.5% | 20.0% | **65.8%** |
-| **Expected Calibration Error (ECE)** | 0.9000 | 0.2779 | **0.0724** |
-| **Brier Calibration Score** | 1.8000 | 0.9830 | **0.6330** |
-| **Safe Auto-Handle Coverage** | 73.5% | 36.5% | 2.0% |
-| **False Auto-Handle Rate (CRITICAL)** | 26.5% | 7.0% | **0.0%** |
-| **Escalation Rate** | 0.0% | 56.5% | 98.0% |
-| **Unsupported-Claim Rate (Safety)** | 0.0% | 0.0% | **0.0%** |
+| **Intent Accuracy (Stratified)** | 8.5% | 57.0% | **72.5%** |
+| **Intent Macro F1 (Stratified)** | 1.6% | 22.1% | **41.4%** |
+| **Intent Accuracy (Natural View)** | 2.9% | 85.5% | **90.2%** |
+| **Intent Weighted F1 (Natural View)** | 0.2% | 81.5% | **89.2%** |
+| **Expected Calibration Error (ECE)** | 0.9150 | 0.0712 | **0.7022** |
+| **Brier Calibration Score** | 1.8300 | 0.6030 | **1.4680** |
+| **Safe Auto-Handle Coverage** | 75.0% | 47.5% | **13.5%** |
+| **False Auto-Handle Rate (CRITICAL)** | 25.0% | 4.5% | **1.0%** *(2/200 overall; 0% on sensitive validation)* |
+| **Escalation Rate** | 0.0% | 48.0% | **85.5%** *(Conservative safety posture)* |
+| **Retrieval Hit@1** | 0.0000 | 0.2950 | **0.9300** |
+| **Retrieval Hit@3** | 0.0000 | 0.2950 | **0.9300** |
+| **Mean Reciprocal Rank (MRR)** | 0.0000 | 0.2950 | **0.9300** |
+| **Unsupported-Claim Rate (Safety)** | 0.0% | 0.0% | **0.0%** *(Strict grounding)* |
 | **Grounded-Response Rate** | 100.0% | 100.0% | **100.0%** |
 
 ### Per-Intent Performance (Primary Agent):
-- `offline_downloads`: Precision 89.5%, Recall 85.0%, **F1: 87.2%**
-- `playlist_library`: Precision 76.0%, Recall 95.0%, **F1: 84.4%**
-- `subscription_billing`: Precision 83.3%, Recall 75.0%, **F1: 79.0%**
-- `account_access_security`: Precision 100.0%, Recall 55.0%, **F1: 71.0%**
-- `app_crash_technical`: Precision 84.6%, Recall 55.0%, **F1: 66.7%**
-- `playback_issues`: Precision 65.0%, Recall 65.0%, **F1: 65.0%**
-- `device_connectivity`: Precision 100.0%, Recall 40.0%, **F1: 57.1%**
-- `service_status_outage`: Precision 75.0%, Recall 45.0%, **F1: 56.2%**
-- `other_unsupported`: Precision 46.7%, Recall 35.0%, **F1: 40.0%**
-- `feature_request_ui`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (confused with feature domains)
+- `subscription_billing`: Precision 86.2%, Recall 80.6%, **F1: 83.3%** (Support: 31)
+- `other_unsupported`: Precision 67.2%, Recall 96.6%, **F1: 79.3%** (Support: 89)
+- `account_access_security`: Precision 92.9%, Recall 68.4%, **F1: 78.8%** (Support: 19)
+- `playlist_library`: Precision 70.6%, Recall 70.6%, **F1: 70.6%** (Support: 17)
+- `playback_issues`: Precision 70.0%, Recall 41.2%, **F1: 51.8%** (Support: 17)
+- `offline_downloads`: Precision 100.0%, Recall 33.3%, **F1: 50.0%** (Support: 6)
+- `app_crash_technical`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 6)
+- `device_connectivity`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 6)
+- `feature_request_ui`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 8)
+- `service_status_outage`: Precision 0.0%, Recall 0.0%, **F1: 0.0%** (Support: 1)
 
 ---
 
 ## 7. LLM-as-Judge & Human Agreement Study
 
-A representative 50-sample slice (5 from each of the 10 intents) was independently scored by a human annotator and the LLM-as-Judge across the 7-dimension rubric (1–5 scale):
+**Status**: `PENDING_HUMAN_ANNOTATION` (Methodological Honesty Policy)
 
-| Rubric Dimension | Spearman Rank $\rho$ | Exact Match % | Within-1 Score % | Mean Absolute Diff (MAD) |
-|---|---|---|---|---|
-| **Grounding & Evidence Support** | **0.8262** | 66.0% | 100.0% | 0.3400 |
-| **Relevance** | **0.6821** | 74.0% | 100.0% | 0.2600 |
-| **Unsupported Claims (Hallucination)** | **1.0000** | 100.0% | 100.0% | 0.0000 |
-| **Escalation Appropriateness** | **1.0000** | 100.0% | 100.0% | 0.0000 |
-| **Correctness** | 0.0000 | 78.0% | 100.0% | 0.2200 |
-| **Completeness** | 0.0000 | 74.0% | 100.0% | 0.2600 |
-| **Tone & Brand Voice** | 0.0000 | 82.0% | 100.0% | 0.1800 |
-| **OVERALL AGGREGATE** | **0.5921** | **82.0%** | **100.0%** | **0.1800** |
-
-*Key Takeaway*: Exact agreement reached **82.0%**, with **100.0%** of scores within $\pm 1$ point and zero major disagreements ($\ge 2$ points). Objective dimensions (hallucination detection, escalation appropriateness) achieved perfect concordance, while subjective dimensions (tone, completeness) exhibited mild human variance.
+To avoid fabricating human scores, the agreement study between the LLM Judge and Human Annotator is established as a live annotation queue:
+- **Queue Location**: `reports/annotations/human_judge_agreement_queue.jsonl`
+- **Sample Size**: 50 real customer inquiries processed through the live pipeline with LLM Judge evaluation.
+- **Current Completion**: 0 / 50 human annotations completed.
+- **Reporting Rule**: Agreement metrics (Spearman $\rho$, Pearson $r$, Cohen's $\kappa$, MAD) remain explicitly `null` until real human annotations are recorded. Zero synthetic or simulated agreement numbers are reported.
+- **Instructions to Complete**: Annotators inspect each item in `human_judge_agreement_queue.jsonl`, fill in `human_scores` (1–5 scale across the 7 dimensions), and run `python scripts/evaluate_judge_agreement.py`.
 
 ---
 

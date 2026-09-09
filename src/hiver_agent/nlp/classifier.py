@@ -140,6 +140,12 @@ class IntentClassifier:
             for idx in ranked_indices[1:4]  # Top 3 runner-ups
         ]
 
+        # Map full calibrated probability distribution
+        calibrated_prob_map = {
+            self.classes_[i]: round(float(calibrated_probs[i]), 6)
+            for i in range(len(self.classes_))
+        }
+
         return {
             "predicted_intent": predicted_intent,
             "calibrated_confidence": round(confidence, 4),
@@ -148,8 +154,21 @@ class IntentClassifier:
             "is_novelty_outlier": is_novelty_outlier,
             "min_centroid_distance": round(min_centroid_distance, 4),
             "centroid_distances": centroid_distances,
+            "calibrated_probabilities": calibrated_prob_map,
+            "prob_vector": [float(p) for p in calibrated_probs],
             "alternatives": alternatives
         }
+
+    def predict_proba(self, texts: List[str]) -> np.ndarray:
+        """
+        Computes calibrated multiclass probability distribution matrix for a list of texts.
+        Returns shape (N, n_classes).
+        """
+        if not self.is_trained:
+            raise RuntimeError("Classifier is not trained yet.")
+        vecs = self.encode(texts)
+        raw_logits = self.clf.decision_function(vecs)
+        return self.scaler.predict_proba(raw_logits)
 
     def save(self, path: Path) -> None:
         """Serializes classifier state to disk."""

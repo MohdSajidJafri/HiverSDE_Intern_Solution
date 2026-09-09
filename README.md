@@ -36,7 +36,7 @@ pytest -v
 ```
 
 ### Step 3: Run Master Frozen Evaluation
-Evaluates the primary system and two baselines against the **single frozen 200-sample hand-labelled gold set**:
+Evaluates the primary system and two baselines against the **200-sample Silver Development Benchmark** (real `@SpotifyCares` inquiries from TWCS; gold human queue pending in `data/gold/gold_annotation_queue.jsonl`):
 ```powershell
 python evaluate.py
 ```
@@ -45,7 +45,7 @@ python evaluate.py
 ### Step 4: Run Interactive Demo CLI
 Test the complete pipeline on real customer inquiries:
 ```powershell
-# Run showcase on 5 representative customer queries:
+# Run showcase on representative customer queries:
 python demo.py
 
 # Or test a custom inquiry:
@@ -56,18 +56,22 @@ python demo.py --query "Desktop app crashes immediately on launch after update"
 
 ## 📊 Headline Benchmark Results
 
-Evaluated on the single frozen gold evaluation dataset ($N=200$ hand-labelled customer queries) against two operational baselines:
+Evaluated on the frozen silver evaluation benchmark ($N=200$ real customer inquiries from `@SpotifyCares`) against two operational baselines under identical frozen conditions:
 
 | Metric | Baseline 1 (Trivial) | Baseline 2 (Simple) | Primary Agent (Frozen) |
 |---|---|---|---|
-| **Intent Accuracy (Stratified View)** | 10.0% | 22.5% | **56.5%** |
-| **Intent Macro F1 (Stratified View)** | 1.8% | 19.0% | **54.6%** |
-| **Intent Accuracy (Natural View)** | 18.0% | 19.1% | **62.5%** |
-| **Intent Weighted F1 (Natural View)** | 5.5% | 20.0% | **65.8%** |
-| **Expected Calibration Error (ECE)** | 0.9000 | 0.2779 | **0.0724** *(Best calibrated)* |
-| **Brier Calibration Score** | 1.8000 | 0.9830 | **0.6330** |
-| **False Auto-Handle Rate (Safety Critical)** | 26.5% | 7.0% | **0.0%** *(Zero safety violations)* |
-| **Escalation Rate** | 0.0% | 56.5% | **98.0%** *(Conservative safety posture)* |
+| **Intent Accuracy (Stratified View)** | 8.5% | 57.0% | **72.5%** |
+| **Intent Macro F1 (Stratified View)** | 1.6% | 22.1% | **41.4%** |
+| **Intent Accuracy (Natural View)** | 2.9% | 85.5% | **90.2%** |
+| **Intent Weighted F1 (Natural View)** | 0.2% | 81.5% | **89.2%** |
+| **Expected Calibration Error (ECE)** | 0.9150 | 0.0712 | **0.7022** |
+| **Brier Calibration Score** | 1.8300 | 0.6030 | **1.4680** |
+| **Safe Auto-Handle Coverage** | 75.0% | 47.5% | **13.5%** |
+| **False Auto-Handle Rate (CRITICAL)** | 25.0% | 4.5% | **1.0%** *(2/200 overall; 0% on sensitive validation)* |
+| **Escalation Rate** | 0.0% | 48.0% | **85.5%** *(Conservative safety posture)* |
+| **Retrieval Hit@1** | 0.0000 | 0.2950 | **0.9300** |
+| **Retrieval Hit@3** | 0.0000 | 0.2950 | **0.9300** |
+| **Mean Reciprocal Rank (MRR)** | 0.0000 | 0.2950 | **0.9300** |
 | **Unsupported-Claim Rate (Safety)** | 0.0% | 0.0% | **0.0%** *(Strict grounding)* |
 | **Grounded-Response Rate** | 100.0% | 100.0% | **100.0%** |
 
@@ -88,13 +92,13 @@ Evaluated on the single frozen gold evaluation dataset ($N=200$ hand-labelled cu
      ▼                                               ▼
 [ Calibrated Classifier ]                 [ Centroid Outlier Detector ]
 (Multinomial Logistic Regression +         (Cosine distance to class
- Multiclass Temperature Scaling T=0.96)     centroids; catches novelty anomalies)
+ Multiclass Temperature Scaling T=0.7820)   centroids; catches novelty anomalies)
      │                                               │
      └───────────────────────┬───────────────────────┘
                              │
                              ▼
             [ Semantic Evidence Retrieval ]
-         (Vector store over 2,268 historical Spotify pairs)
+         (Vector store over 1,754 historical Spotify pairs)
                              │
                              ▼
             [ Evidence Quality & Contradiction Layer ]
@@ -107,8 +111,8 @@ Evaluated on the single frozen gold evaluation dataset ($N=200$ hand-labelled cu
                              ▼
             [ Conservative Escalation Policy ]
          Evaluates:
-         - Confidence < 0.55
-         - Evidence quality < 0.55
+         - Confidence < 0.45
+         - Evidence quality < 0.45
          - Incompatible contradictions
          - Sensitive account/billing domains
          - Novelty outliers

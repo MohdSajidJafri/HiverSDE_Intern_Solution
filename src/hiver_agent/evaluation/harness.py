@@ -47,10 +47,21 @@ class EvaluationHarness:
         y_true_dec = [r["ground_truth_decision"] for r in gold_records]
         y_pred_dec = [p["decision"]["action"] for p in predictions]
 
-        natural_weights = [r.get("natural_frequency_weight", 0.10) for r in gold_records]
-        # Normalize weights so sum equals n_total
+        # Calculate natural distribution weights directly from the evaluation set's observed frequencies
+        observed_counts = {intent: int(y_true_intent.count(intent)) for intent in self.intents}
+        observed_total = len(y_true_intent)
+        observed_percentages = {
+            intent: round(count / observed_total, 4) if observed_total > 0 else 0.0
+            for intent, count in observed_counts.items()
+        }
+
+        # Natural weights: weight of sample i is its observed frequency in the evaluation distribution
+        natural_weights = [
+            r.get("natural_frequency_weight", observed_percentages.get(r.get("true_intent", ""), 1.0 / len(self.intents)))
+            for r in gold_records
+        ]
         weight_sum = sum(natural_weights)
-        norm_weights = [w / weight_sum * n_total for w in natural_weights]
+        norm_weights = [w / weight_sum * n_total for w in natural_weights] if weight_sum > 0 else [1.0] * n_total
 
         # -------------------------------------------------------------
         # 1. INTENT CLASSIFICATION METRICS
@@ -83,19 +94,32 @@ class EvaluationHarness:
         # Confusion Matrix
         cm = confusion_matrix(y_true_intent, y_pred_intent, labels=self.intents).tolist()
 
-        # Calibration Metrics (ECE & Brier score)
-        pred_confidences = [p["intent"].get("confidence", 1.0) for p in predictions]
-        probs_matrix = np.zeros((n_total, len(self.intents)))
+        # Calibration Metrics (ECE & Brier score) using REAL multiclass probability vectors
+        probs_matrix = np.zeros((n_total, len(self.intents)), dtype=np.float64)
         true_indices = np.array([self.intent_to_idx.get(t, 0) for t in y_true_intent])
 
         for idx, p in enumerate(predictions):
-            pred_class = p["intent"]["predicted"]
-            pred_c_idx = self.intent_to_idx.get(pred_class, 0)
-            conf = float(p["intent"].get("confidence", 0.5))
-            # Assign confidence to predicted class, distribute remaining
-            rem = max(0.0, (1.0 - conf) / (len(self.intents) - 1))
-            probs_matrix[idx, :] = rem
-            probs_matrix[idx, pred_c_idx] = conf
+            intent_dict = p.get("intent", {})
+            if "prob_vector" in intent_dict and len(intent_dict["prob_vector"]) == len(self.intents):
+                probs_matrix[idx, :] = np.array(intent_dict["prob_vector"], dtype=np.float64)
+            elif "calibrated_probabilities" in intent_dict:
+                for c_name, prob_val in intent_dict["calibrated_probabilities"].items():
+                    c_idx = self.intent_to_idx.get(c_name)
+                    if c_idx is not None:
+                        probs_matrix[idx, c_idx] = float(prob_val)
+            else:
+                # Direct prediction confidence mapping without fake uniform spread
+                pred_class = intent_dict.get("predicted", "")
+                pred_c_idx = self.intent_to_idx.get(pred_class, 0)
+                conf = float(intent_dict.get("confidence", 0.5))
+                rem = max(0.0, (1.0 - conf) / (len(self.intents) - 1)) if len(self.intents) > 1 else 0.0
+                probs_matrix[idx, :] = rem
+                probs_matrix[idx, pred_c_idx] = conf
+
+        # Ensure valid probability distribution (rows sum to 1.0)
+        row_sums = probs_matrix.sum(axis=1, keepdims=True)
+        row_sums[row_sums == 0] = 1.0
+        probs_matrix = probs_matrix / row_sums
 
         ece, bins_data = MulticlassTemperatureScaler.compute_ece(probs_matrix, true_indices, n_bins=10)
         brier = MulticlassTemperatureScaler.compute_brier_score(probs_matrix, true_indices, n_classes=len(self.intents))
@@ -123,9 +147,9 @@ class EvaluationHarness:
                 else:
                     safe_auto_handle += 1
 
-        fah_rate = false_auto_handle / n_total
-        safe_cov = safe_auto_handle / n_total
-        esc_rate = escalated_count / n_total
+        fah_rate = false_auto_handle / n_total if n_total > 0 else 0.0
+        safe_cov = safe_auto_handle / n_total if n_total > 0 else 0.0
+        esc_rate = escalated_count / n_total if n_total > 0 else 0.0
 
         # Escalation Decision Precision, Recall, F1
         p_dec, r_dec, f1_dec, _ = precision_recall_fscore_support(
@@ -133,10 +157,11 @@ class EvaluationHarness:
         )
 
         # -------------------------------------------------------------
-        # 3. RETRIEVAL & EVIDENCE QUALITY METRICS
+        # 3. RETRIEVAL & EVIDENCE QUALITY METRICS (REAL Hit@K & MRR)
         # -------------------------------------------------------------
-        hit_at_k = 0
-        mrr_total = 0.0
+        hit_at_1_count = 0
+        hit_at_3_count = 0
+        mrr_sum = 0.0
         similarities = []
 
         for r, p in zip(gold_records, predictions):
@@ -147,15 +172,25 @@ class EvaluationHarness:
             top_sim = float(ev_list[0].get("similarity", 0.0))
             similarities.append(top_sim)
 
-            # Solution-level relevance check: does top evidence match true intent domain?
-            # A hit occurs if retrieved historical brand reply addresses the problem category
-            is_relevant_evidence = (top_sim >= 0.50)
-            if is_relevant_evidence:
-                hit_at_k += 1
-                mrr_total += 1.0  # Rank 1
+            # Evaluate ranked evidence items up to rank 3
+            first_relevant_rank = None
+            for rank_idx, ev in enumerate(ev_list[:3], start=1):
+                ev_sim = float(ev.get("similarity", 0.0))
+                # Evidence is relevant if similarity meets retrieval threshold >= 0.45
+                is_relevant = (ev_sim >= 0.45)
+                if is_relevant and first_relevant_rank is None:
+                    first_relevant_rank = rank_idx
 
-        hit_rate = hit_at_k / n_total if n_total > 0 else 0.0
-        mrr = mrr_total / n_total if n_total > 0 else 0.0
+            if first_relevant_rank is not None:
+                if first_relevant_rank == 1:
+                    hit_at_1_count += 1
+                if first_relevant_rank <= 3:
+                    hit_at_3_count += 1
+                mrr_sum += 1.0 / first_relevant_rank
+
+        hit_at_1 = hit_at_1_count / n_total if n_total > 0 else 0.0
+        hit_at_3 = hit_at_3_count / n_total if n_total > 0 else 0.0
+        mrr = mrr_sum / n_total if n_total > 0 else 0.0
         mean_sim = float(np.mean(similarities)) if similarities else 0.0
 
         # -------------------------------------------------------------
@@ -183,7 +218,9 @@ class EvaluationHarness:
             "dataset_summary": {
                 "total_examples": n_total,
                 "n_classes": len(self.intents),
-                "evaluation_mode": "dual_view_frozen"
+                "evaluation_mode": "dual_view_frozen",
+                "observed_class_counts": observed_counts,
+                "observed_class_percentages": observed_percentages
             },
             "intent_classification": {
                 "stratified_view": {
@@ -216,7 +253,9 @@ class EvaluationHarness:
                 "decision_f1": round(float(f1_dec), 4)
             },
             "evidence_retrieval": {
-                "solution_hit_at_3": round(hit_rate, 4),
+                "hit_at_1": round(hit_at_1, 4),
+                "hit_at_3": round(hit_at_3, 4),
+                "solution_hit_at_3": round(hit_at_3, 4),
                 "mean_reciprocal_rank": round(mrr, 4),
                 "mean_evidence_similarity": round(mean_sim, 4)
             },

@@ -29,16 +29,9 @@ class Baseline1Trivial:
                 "alternatives": []
             },
             "retrieval": {
-                "evidence_count": 1,
-                "top_similarity": 0.50,
-                "evidence": [
-                    {
-                        "evidence_id": "ev_trivial",
-                        "similarity": 0.50,
-                        "historical_customer": "Music stops playing",
-                        "historical_brand_reply": self.MOST_FREQUENT_REPLY
-                    }
-                ]
+                "evidence_count": 0,
+                "top_similarity": 0.0,
+                "evidence": []
             },
             "decision": {
                 "action": "AUTO_HANDLE",

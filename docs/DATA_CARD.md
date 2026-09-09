@@ -58,10 +58,30 @@ Raw Twitter records are individual tweets, not structured dialogues. To reconstr
 ---
 
 ## 6. Leakage & Split Protocol
-- **Retrieval Corpus**: Contains only historical brand interactions strictly segregated from evaluation data.
-- **Development/Tuning Set (`data/val/dev_tuning.jsonl`)**: Used for threshold calibration and prompt optimization.
-- **Gold Evaluation Set (`data/gold/gold_messages.jsonl`)**: 200 hand-labelled queries with full conversation threads quarantined from retrieval corpus.
-- **Leakage Checks**: Automated checks for exact duplicate texts, thread overlaps, and semantic near-duplicates ($>0.92$ embedding cosine similarity). Findings recorded in `docs/LEAKAGE_AUDIT.md`.
+The dataset of 2,328 reconstructed `@SpotifyCares` interaction pairs is partitioned across 1,352 isolated connected components of the `(customer_author_id, conversation_id)` bipartite graph:
+
+1. **Retrieval & Training Corpus (`data/processed/retrieval_corpus.jsonl`)**:
+   - 1,754 interaction pairs from 1,052 disjoint components.
+   - Built into dense semantic vector store index (`models/retrieval_index.pkl`).
+   - Supervised classification training data: `data/processed/silver_training_data.jsonl` (1,754 records with `label_provenance: "taxonomy_rules_silver"`).
+
+2. **Quarantined Development / Tuning Set (`data/val/dev_tuning.jsonl`)**:
+   - 184 interaction pairs from 100 disjoint components strictly quarantined from the retrieval corpus.
+   - Used exclusively for multiclass temperature scaling calibration ($T=0.7820$) and deterministic multi-objective threshold tuning ($\tau_{\text{conf}}=0.45, \tau_{\text{qual}}=0.45$).
+
+3. **Gold Candidate Queue (`data/gold/gold_annotation_queue.jsonl` & `.csv`)**:
+   - 200 real customer inquiries from 100 disjoint components strictly quarantined from retrieval and training.
+   - Blank `gold_intent` and `ground_truth_decision`, awaiting human review.
+
+4. **Silver Development Benchmark (`data/interim/silver_eval_set.jsonl` & `data/gold/gold_messages.jsonl`)**:
+   - 200 real customer inquiries explicitly tagged `SILVER_DEVELOPMENT_BENCHMARK`.
+   - Used for reproducible automated baseline evaluation without fraudulent claims of human annotation.
+
+5. **Multi-Layer Leakage Audit (`docs/LEAKAGE_AUDIT.md`)**:
+   - Tweet ID overlap: **0**
+   - Thread ID overlap: **0**
+   - Author-day overlap: **0**
+   - Conservative near-duplicate semantic screening ($>0.92$ cosine similarity): audited and documented.
 
 ---
 

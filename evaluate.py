@@ -78,6 +78,8 @@ def run_agent_pipeline(
             "confidence": intent_res["calibrated_confidence"],
             "raw_logit": intent_res["raw_logit"],
             "is_outlier": intent_res["is_novelty_outlier"],
+            "prob_vector": intent_res.get("prob_vector", []),
+            "calibrated_probabilities": intent_res.get("calibrated_probabilities", {}),
             "alternatives": intent_res["alternatives"]
         },
         "retrieval": {
@@ -108,21 +110,29 @@ def main():
     args = parser.parse_args()
 
     print("=" * 80)
-    print("FROZEN GOLD EVALUATION RUNNER: HIVER BRAND SUPPORT AGENT")
+    print("FROZEN EVALUATION RUNNER: HIVER BRAND SUPPORT AGENT")
     print("=" * 80)
 
-    # Load frozen gold evaluation dataset
+    # Load authoritative frozen configuration (fails loudly on config mismatch)
+    config = AppConfig.load_authoritative()
+    print(f"Loaded Authoritative Frozen Configuration:")
+    print(f"  tau_conf: {config.thresholds.intent_confidence_threshold}")
+    print(f"  tau_qual: {config.thresholds.evidence_quality_threshold}")
+
+    # Load evaluation dataset
     gold_path = project_root / args.gold_set
     with open(gold_path, "r", encoding="utf-8") as f:
         gold_records = [json.loads(line) for line in f]
-    print(f"Loaded {len(gold_records)} single frozen gold evaluation examples.")
+    is_gold = any(r.get("is_human_annotated_gold", False) for r in gold_records)
+    tier_label = "HUMAN_GOLD" if is_gold else "SILVER_DEVELOPMENT_BENCHMARK"
+    print(f"Loaded {len(gold_records)} evaluation records (Tier: {tier_label}).")
 
     # Load trained models & components
     print("Loading frozen model artifacts...")
     classifier = IntentClassifier.load(project_root / "models" / "intent_classifier.pkl")
     vector_store = VectorStore.load(project_root / "models" / "retrieval_index.pkl")
     assessor = EvidenceQualityAssessor()
-    policy = EscalationPolicy()
+    policy = EscalationPolicy(config=config)
     generator = DeterministicGroundedProvider()
     checker = HallucinationChecker()
 
@@ -131,10 +141,10 @@ def main():
     with open(retrieval_path, "r", encoding="utf-8") as f:
         retrieval_pairs = [json.loads(line) for line in f]
     
-    from scripts.train_classifier import assign_training_intent
+    from scripts.train_classifier import assign_silver_training_intent
     baseline_simple = Baseline2Simple()
     train_subset = retrieval_pairs[:800]
-    intent_map = {p["customer_text"]: assign_training_intent(p["customer_text"]) for p in train_subset}
+    intent_map = {p["customer_text"]: assign_silver_training_intent(p["customer_text"]) for p in train_subset}
     baseline_simple.fit(train_subset, intent_map)
 
     baseline_trivial = Baseline1Trivial()
@@ -196,6 +206,9 @@ def main():
         ("Safe Auto-Handle Coverage", base1_eval["escalation_policy"]["safe_auto_handle_coverage"], base2_eval["escalation_policy"]["safe_auto_handle_coverage"], primary_eval["escalation_policy"]["safe_auto_handle_coverage"]),
         ("False Auto-Handle Rate (CRITICAL)", base1_eval["escalation_policy"]["false_auto_handle_rate"], base2_eval["escalation_policy"]["false_auto_handle_rate"], primary_eval["escalation_policy"]["false_auto_handle_rate"]),
         ("Escalation Rate", base1_eval["escalation_policy"]["escalation_rate"], base2_eval["escalation_policy"]["escalation_rate"], primary_eval["escalation_policy"]["escalation_rate"]),
+        ("Retrieval Hit@1", base1_eval["evidence_retrieval"].get("hit_at_1", 0.0), base2_eval["evidence_retrieval"].get("hit_at_1", 0.0), primary_eval["evidence_retrieval"].get("hit_at_1", 0.0)),
+        ("Retrieval Hit@3", base1_eval["evidence_retrieval"].get("hit_at_3", 0.0), base2_eval["evidence_retrieval"].get("hit_at_3", 0.0), primary_eval["evidence_retrieval"].get("hit_at_3", 0.0)),
+        ("Mean Reciprocal Rank (MRR)", base1_eval["evidence_retrieval"].get("mean_reciprocal_rank", 0.0), base2_eval["evidence_retrieval"].get("mean_reciprocal_rank", 0.0), primary_eval["evidence_retrieval"].get("mean_reciprocal_rank", 0.0)),
         ("Unsupported-Claim Rate (Safety)", base1_eval["reply_generation"]["unsupported_claim_rate"], base2_eval["reply_generation"]["unsupported_claim_rate"], primary_eval["reply_generation"]["unsupported_claim_rate"]),
         ("Grounded-Response Rate", base1_eval["reply_generation"]["grounded_response_rate"], base2_eval["reply_generation"]["grounded_response_rate"], primary_eval["reply_generation"]["grounded_response_rate"])
     ]

@@ -1,39 +1,35 @@
 data:
-  raw_dataset_url: "https://huggingface.co/datasets/SunidhiSriram/twcs/resolve/main/twcs.csv"
-  raw_data_dir: "data/raw"
-  processed_data_dir: "data/processed"
-  gold_data_path: "data/gold/gold_messages.jsonl"
-  val_data_path: "data/val/dev_tuning.jsonl"
-  interim_dir: "data/interim"
-  selected_brand: "SpotifyCares"
+  raw_dataset_url: https://huggingface.co/datasets/SunidhiSriram/twcs/resolve/main/twcs.csv
+  raw_data_dir: data/raw
+  processed_data_dir: data/processed
+  gold_data_path: data/gold/gold_messages.jsonl
+  val_data_path: data/val/dev_tuning.jsonl
+  interim_dir: data/interim
+  selected_brand: SpotifyCares
   random_seed: 42
-
 model:
-  embedding_model_name: "all-MiniLM-L6-v2"
+  embedding_model_name: all-MiniLM-L6-v2
   embedding_dim: 384
-  models_dir: "models"
-  freeze_manifest_path: "models/freeze_manifest.json"
-  classifier_path: "models/intent_classifier.pkl"
-  vector_index_path: "models/retrieval_index.pkl"
-
+  models_dir: models
+  freeze_manifest_path: models/freeze_manifest.json
+  classifier_path: models/intent_classifier.pkl
+  vector_index_path: models/retrieval_index.pkl
 thresholds:
-  intent_confidence_threshold: 0.65
-  evidence_quality_threshold: 0.70
+  intent_confidence_threshold: 0.45
+  evidence_quality_threshold: 0.45
   centroid_novelty_threshold: 0.45
   leakage_screening_threshold: 0.92
-
 escalation:
   sensitive_intents:
-    - "subscription_billing"
-    - "account_access_security"
+  - subscription_billing
+  - account_access_security
   escalate_on_contradiction: true
   escalate_on_outlier: true
   escalate_on_low_confidence: true
   escalate_on_low_evidence: true
-
 generation:
-  provider_type: "deterministic"
-  model_name: "gemini-1.5-flash"
+  provider_type: deterministic
+  model_name: gemini-1.5-flash
   temperature: 0.0
   max_tokens: 250
-  api_key_env_var: "GEMINI_API_KEY"
+  api_key_env_var: GEMINI_API_KEY

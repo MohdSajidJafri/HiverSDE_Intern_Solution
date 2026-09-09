@@ -1,14 +1,16 @@
 # What is Misleading About My Headline Number?
 
 ## Executive Summary
-In our evaluation report, the headline metrics show:
-- **Intent Accuracy**: **56.5%** (Stratified) / **62.5%** (Natural Distribution View)
-- **Macro F1**: **54.6%** (Stratified) / **65.8%** (Natural Distribution View)
-- **False Auto-Handle Rate on Sensitive Inquiries**: **0.0%**
-- **Expected Calibration Error (ECE)**: **0.0724**
+In our evaluation report, the headline metrics on the 200-sample Silver Development Benchmark show:
+- **Intent Accuracy**: **72.5%** (Stratified) / **90.2%** (Natural Distribution View)
+- **Macro F1**: **41.4%** (Stratified) / **89.2%** (Natural Distribution View)
+- **False Auto-Handle Rate on Sensitive Issues**: **0.0%** on validation tuning (1.0% overall on silver benchmark)
+- **Escalation Rate**: **85.5%**
+- **Safe Auto-Handle Coverage**: **13.5%**
+- **Retrieval Hit@1 / Hit@3 / MRR**: **0.9300**
 - **Unsupported-Claim Rate**: **0.0%**
 
-While these numbers outperform the trivial baseline (10.0% accuracy, 26.5% false auto-handle rate) and the simple baseline (22.5% accuracy, 7.0% false auto-handle rate), **presenting these headline metrics without rigorous methodological caveats would be fundamentally misleading.**
+While these numbers substantially outperform the trivial baseline (8.5% accuracy, 25.0% false auto-handle rate) and simple baseline (57.0% accuracy, 4.5% false auto-handle rate), **presenting these headline metrics without rigorous methodological caveats would be fundamentally misleading.**
 
 This document details the critical limitations, trade-offs, and external validity caveats that every hiring evaluator and ML practitioner must understand.
 
@@ -16,30 +18,30 @@ This document details the critical limitations, trade-offs, and external validit
 
 ## 1. Class Distribution Disparity & The Two Evaluation Views
 - **The Caveat**:
-  The **Stratified View** enforces an artificial 10% representation across all 10 classes (20 queries each). In contrast, real customer support traffic is heavily skewed: `playback_issues` and `app_crash_technical` account for ~35% of all traffic, while `feature_request_ui` and `service_status_outage` account for <5% each.
+  The **Stratified View** evaluates raw unweighted performance across all 10 classes. In real TWCS support traffic, however, classes are heavily skewed: `other_unsupported` accounts for 44.5% of queries, `subscription_billing` accounts for 15.5%, while `service_status_outage` accounts for only 0.5% (1 example).
 - **Why It Misleads**:
-  - The unweighted Macro F1 treats `feature_request_ui` (F1: 0.0) as equally important to `playback_issues` (F1: 0.65). This pulls down the headline Stratified F1 to 54.6%, under-representing the system's true operational utility on high-volume issues.
-  - Conversely, re-weighting by empirical traffic inflates the Natural F1 to 65.8%, which masks the fact that the system completely fails on certain minority categories (such as UI feature requests). Neither number tells the full story alone.
+  - The unweighted Macro F1 treats `service_status_outage` (F1: 0.0) and `feature_request_ui` (F1: 0.0) as having equal weight to `subscription_billing` (F1: 83.3%) and `other_unsupported` (F1: 79.3%). This pulls down the headline Stratified F1 to 41.4%, obscuring the model's strong capability on high-volume operational categories.
+  - Conversely, weighting by natural traffic inflates the Natural F1 to 89.2%, which conceals the fact that minority classes with few training examples are frequently misclassified into dominant clusters. Neither number tells the full story alone.
 
 ---
 
-## 2. Gold Evaluation Set Size & Confidence Intervals
+## 2. Evaluation Set Provenance & Statistical Uncertainty
 - **The Caveat**:
-  The gold evaluation set consists of **200 hand-labelled queries** (20 per class).
+  The benchmark consists of **200 real Twitter customer inquiries** (`SILVER_DEVELOPMENT_BENCHMARK`). Official gold candidate inquiries (`data/gold/gold_annotation_queue.jsonl`) remain pending manual human annotation.
 - **Statistical Reality**:
-  - For a class with $N=20$, a single misclassification changes the class recall by **5.0 percentage points**.
-  - A 95% Clopper-Pearson binomial confidence interval around an observed accuracy of 56.5% with $N=200$ spans **[49.3%, 63.5%]**.
-  - Claiming that the primary model is "56.5% accurate" implies a false level of precision. In reality, performance is bounded within a 14-point confidence interval.
+  - For rare classes with support $N \le 6$ (e.g. `app_crash_technical`, `device_connectivity`), small sample counts limit statistical power.
+  - A 95% Clopper-Pearson binomial confidence interval around observed accuracy of 72.5% with $N=200$ spans **[65.8%, 78.5%]**.
+  - Performance should be interpreted as a confidence band rather than an exact point estimate.
 
 ---
 
 ## 3. The Automation-vs-Safety Escalation Trade-off
-- **The Headline**: *"0.0% False Auto-Handle Rate on sensitive security and billing issues."*
+- **The Headline**: *"1.0% False Auto-Handle Rate overall, with 0 sensitive false auto-handles during validation tuning."*
 - **What is Misleading**:
-  - Achieving zero false auto-handles was accomplished by choosing a **strictly conservative operating posture**: the system escalated **98.0%** of the 200 gold test queries!
-  - In an operational call center, escalating 98% of queries saves almost zero agent labor.
-  - The gold test set was deliberately designed with a disproportionate density of edge cases, out-of-scope anomalies, and sensitive billing/security inquiries (~40% of the gold set).
-  - While this proves that the guardrail mechanism successfully prevents catastrophic errors on dangerous queries, it must not be misinterpreted as demonstrating a highly automated production agent. Real automation coverage on clean, unambiguous technical traffic is ~30–40%, not 98%.
+  - Achieving this high safety standard required setting authoritative thresholds $\tau_{\text{conf}}=0.45, \tau_{\text{qual}}=0.45$, which results in an **85.5% escalation rate**.
+  - Safe auto-handling coverage is **13.5%**.
+  - If a team attempts to aggressively force a 50%+ auto-handling rate without better classification representations, false auto-handles on complex issues escalate rapidly.
+  - We explicitly report this 85.5% escalation rate as an inherent policy and model trade-off: safety is prioritized over ungrounded automation.
 
 ---
 

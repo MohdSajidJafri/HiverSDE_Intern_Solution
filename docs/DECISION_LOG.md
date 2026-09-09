@@ -168,3 +168,37 @@ This log records 15 non-obvious engineering and architectural decisions made dur
 - **Chosen Option**: Alternative 2.
 - **Rationale**: Professional engineering integrity demands distinguishing between a high-quality prototype demonstrating core concepts and a live production system handling real customer accounts.
 - **Trade-off**: Prevents hyperbolic claims while highlighting methodological rigor.
+
+---
+
+### Decision 16: Bipartite Graph Connected-Component Partitioning for Leakage Prevention
+- **Context**: In Twitter customer support, single customer authors engage across multiple threads, and multiple customer authors can reply within the same shared conversation. Naive partitioning by author alone left 11 thread overlaps; naive partitioning by thread alone left 94 author-day overlaps.
+- **Alternatives Considered**:
+  1. Split randomly by tweet ID (causes massive thread leakage).
+  2. Split by author only (leaks shared conversation threads).
+  3. Form a bipartite graph $G = (U_{\text{authors}}, V_{\text{threads}}, E)$ and partition by connected components.
+- **Chosen Option**: Alternative 3.
+- **Rationale**: Connected-component partitioning guarantees that any customer author and all conversation threads they touched exist exclusively in exactly one partition.
+- **Result**: Zero tweet ID overlap, zero thread ID overlap, and zero author-day overlap across retrieval, validation, and gold sets.
+
+---
+
+### Decision 17: Multi-Objective Threshold Optimization under Hard Safety Constraint
+- **Context**: Setting escalation thresholds ($\tau_{\text{conf}}, \tau_{\text{qual}}$) dictates the balance between automation and safety.
+- **Alternatives Considered**:
+  1. Hardcode thresholds to minimize escalation without validation tuning.
+  2. Select thresholds solely to produce 0.0% False Auto-Handle Rate regardless of escalation impact.
+  3. Run a deterministic grid sweep over the quarantined validation set, treat 0 false auto-handles on sensitive issues as a hard safety constraint, and among satisfying candidates select the least-conservative (highest safe auto-handle coverage) operating point.
+- **Chosen Option**: Alternative 3.
+- **Rationale**: Optimizing for maximum coverage under a hard safety constraint produces an empirically defensible operating point ($\tau_{\text{conf}}=0.45, \tau_{\text{qual}}=0.45$), achieving 0 sensitive false auto-handles with 11.4% safe auto-handling coverage on validation.
+
+---
+
+### Decision 18: Silver Development Benchmark vs Quarantined Gold Queue Distinction
+- **Context**: Automated benchmark evaluation requires labelled test queries, but fabricating human annotations compromises scientific truthfulness.
+- **Alternatives Considered**:
+  1. Synthetically generate test queries with LLMs and claim they are "hand-labelled gold".
+  2. Block all evaluation until an annotator manually reviews all 200 items.
+  3. Establish an explicit tier distinction: a Silver Development Benchmark (`data/interim/silver_eval_set.jsonl`) for automated evaluation, while strictly isolating the Gold Candidate Queue (`data/gold/gold_annotation_queue.jsonl`) with blank labels awaiting manual human review.
+- **Chosen Option**: Alternative 3.
+- **Rationale**: Enables reproducible pipeline evaluation without deceptive claims, while providing a clear human-in-the-loop completion path.

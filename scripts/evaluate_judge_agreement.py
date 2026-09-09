@@ -1,14 +1,15 @@
 """
-Human vs LLM-as-a-Judge Agreement Study.
-Evaluates 50 representative human-annotated validation interactions against the LLM judge.
-Reports Spearman rho, Pearson r, exact agreement %, within-1 agreement %, and MAD
-broken down across all 7 rubric dimensions, and documents disagreements.
+Human vs LLM-as-a-Judge Agreement Study Workflow.
+Samples 50 real customer inquiries, generates actual agent outputs and LLM Judge evaluations,
+and builds a machine-readable human annotation queue.
+Calculates statistical agreement metrics ONLY when genuine human annotations are provided.
+Until human review is complete, reports status as PENDING_HUMAN_ANNOTATION.
 """
 
 import sys
 import json
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import numpy as np
 from scipy.stats import spearmanr, pearsonr
 
@@ -19,173 +20,201 @@ if sys.platform == "win32":
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
+from src.hiver_agent.config import AppConfig
+from src.hiver_agent.nlp.classifier import IntentClassifier
+from src.hiver_agent.retrieval.vector_store import VectorStore
+from src.hiver_agent.retrieval.evidence_quality import EvidenceQualityAssessor
+from src.hiver_agent.policy.escalation import EscalationPolicy
+from src.hiver_agent.generation.provider import DeterministicGroundedProvider
+from src.hiver_agent.generation.hallucination_checker import HallucinationChecker
 from src.hiver_agent.evaluation.judge import LLMJudge
 
 
 def main():
     print("=" * 75)
-    print("HUMAN VS LLM-AS-A-JUDGE AGREEMENT STUDY (50 SAMPLES)")
+    print("HUMAN VS LLM-AS-A-JUDGE AGREEMENT WORKFLOW (50 REAL SAMPLES)")
     print("=" * 75)
 
-    gold_path = project_root / "data" / "gold" / "gold_messages.jsonl"
-    with open(gold_path, "r", encoding="utf-8") as f:
-        gold_records = [json.loads(line) for line in f]
+    silver_path = project_root / "data" / "interim" / "silver_eval_set.jsonl"
+    with open(silver_path, "r", encoding="utf-8") as f:
+        records = [json.loads(line) for line in f]
 
-    # Select representative 50-sample slice (5 from each of the 10 intents)
-    validation_slice = []
+    # Sample 50 real cases deterministically (5 from each of 10 intents)
     intents_seen = {}
-    for r in gold_records:
-        intent = r["true_intent"]
-        count = intents_seen.get(intent, 0)
-        if count < 5:
-            validation_slice.append(r)
-            intents_seen[intent] = count + 1
+    sampled_records = []
+    for r in records:
+        intent = r.get("true_intent", "other_unsupported")
+        if intents_seen.get(intent, 0) < 5:
+            sampled_records.append(r)
+            intents_seen[intent] = intents_seen.get(intent, 0) + 1
 
-    print(f"Sampled {len(validation_slice)} representative cases across 10 intents for human evaluation.")
+    # If some intents have fewer than 5, fill to 50 from remaining records
+    if len(sampled_records) < 50:
+        remaining = [r for r in records if r not in sampled_records]
+        sampled_records.extend(remaining[:50 - len(sampled_records)])
 
-    # Synthetic simulated ground truth human annotations across 7 dimensions (1-5 scale)
-    # Reflects real human judgment with natural human subjectivity
-    np.random.seed(42)
-    human_annotations = []
+    print(f"Sampled {len(sampled_records)} real customer interactions across taxonomy intents.")
+
+    # Load actual production components
+    models_dir = project_root / "models"
+    classifier = IntentClassifier()
+    classifier = classifier.load(models_dir / "intent_classifier.pkl")
+    vector_store = VectorStore.load(models_dir / "retrieval_index.pkl")
+    assessor = EvidenceQualityAssessor()
+    policy = EscalationPolicy()
+    generator = DeterministicGroundedProvider()
+    checker = HallucinationChecker()
     judge = LLMJudge()
+
+    annotations_dir = project_root / "reports" / "annotations"
+    annotations_dir.mkdir(parents=True, exist_ok=True)
+    queue_path = annotations_dir / "human_judge_agreement_queue.jsonl"
+
+    # Check if existing queue with completed human annotations already exists
+    existing_human_annotations = {}
+    if queue_path.exists():
+        with open(queue_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    item = json.loads(line)
+                    h_scores = item.get("human_scores", {})
+                    # If at least correctness is scored, consider it annotated
+                    if h_scores and h_scores.get("correctness") is not None:
+                        existing_human_annotations[item["sample_id"]] = h_scores
+
+    print(f"Existing human-completed annotations found: {len(existing_human_annotations)}/50")
+
+    queue_records = []
     judge_annotations = []
+    human_annotations = []
 
-    for r in validation_slice:
-        # Mock representative draft reply and evidence for evaluation
-        is_sensitive = r.get("is_sensitive", False)
-        edge_type = r.get("edge_case_type", "none")
-        gt_dec = r["ground_truth_decision"]
+    for idx, r in enumerate(sampled_records):
+        sample_id = f"hjudge_{idx+1:03d}"
+        query = r["customer_text"]
+        gt_dec = r.get("ground_truth_decision", "ESCALATE")
 
-        # Simulate agent execution for this query
-        if is_sensitive or edge_type in ["out_of_scope", "multi_intent"]:
-            pred_dec = "ESCALATE"
-            draft_reply = "We'd like to take a closer look at this issue for you. Please send us a direct message with your account details so we can assist. /CH"
-            evidence = [{"historical_brand_reply": "Send us a DM with your account email /CH", "similarity": 0.82}]
-        else:
-            pred_dec = "AUTO_HANDLE"
-            draft_reply = "We suggest restarting your device by holding the sleep/wake button for 10 seconds. Keep us posted! /CH"
-            evidence = [{"historical_brand_reply": "Can you try restarting your device by holding sleep/wake? /CH", "similarity": 0.88}]
+        # Run REAL agent pipeline on real query
+        intent_res = classifier.predict_one(query)
+        evidence_res = vector_store.retrieve(query, top_k=3)
+        ev_assess = assessor.assess_evidence(query, intent_res["predicted_intent"], evidence_res)
+        gen_res = generator.generate_reply(query, intent_res["predicted_intent"], evidence_res)
+        claim_ver = checker.verify_claims(gen_res.reply, evidence_res)
+        dec = policy.evaluate(intent_res, ev_assess, claim_ver)
 
         # Run LLM Judge
         judge_score = judge.evaluate_reply(
-            customer_query=r["customer_text"],
-            predicted_intent=r["true_intent"],
-            draft_reply=draft_reply,
-            retrieved_evidence=evidence,
-            decision=pred_dec,
+            customer_query=query,
+            predicted_intent=intent_res["predicted_intent"],
+            draft_reply=gen_res.reply,
+            retrieved_evidence=evidence_res,
+            decision=dec.action,
             ground_truth_decision=gt_dec
         )
-        judge_annotations.append(judge_score)
+        judge_dict = {
+            "correctness": judge_score.correctness,
+            "relevance": judge_score.relevance,
+            "grounding": judge_score.grounding,
+            "completeness": judge_score.completeness,
+            "tone": judge_score.tone,
+            "unsupported_claims": judge_score.unsupported_claims,
+            "escalation_appropriateness": judge_score.escalation_appropriateness,
+            "justification": judge_score.justification
+        }
+        judge_annotations.append(judge_dict)
 
-        # Human score: highly aligned with judge, with occasional human divergence
-        h_correctness = max(1, min(5, judge_score.correctness + int(np.random.choice([0, 0, 0, -1, 1]))))
-        h_relevance = max(1, min(5, judge_score.relevance + int(np.random.choice([0, 0, 0, -1, 0]))))
-        h_grounding = max(1, min(5, judge_score.grounding + int(np.random.choice([0, 0, 0, -1, 1]))))
-        h_completeness = max(1, min(5, judge_score.completeness + int(np.random.choice([0, 0, -1, 0]))))
-        h_tone = max(1, min(5, judge_score.tone + int(np.random.choice([0, 0, 0, 0, -1]))))
-        h_unsupported = judge_score.unsupported_claims  # objective
-        h_escalation = judge_score.escalation_appropriateness  # objective match
-
-        human_annotations.append({
-            "correctness": h_correctness,
-            "relevance": h_relevance,
-            "grounding": h_grounding,
-            "completeness": h_completeness,
-            "tone": h_tone,
-            "unsupported_claims": h_unsupported,
-            "escalation_appropriateness": h_escalation
+        # Human scores: preserve if already filled, otherwise empty template
+        human_score = existing_human_annotations.get(sample_id, {
+            "correctness": None,
+            "relevance": None,
+            "grounding": None,
+            "completeness": None,
+            "tone": None,
+            "unsupported_claims": None,
+            "escalation_appropriateness": None
         })
+        if human_score.get("correctness") is not None:
+            human_annotations.append(human_score)
 
-    # Statistical Agreement Analysis across dimensions
-    dimensions = LLMJudge.DIMENSIONS
-    dim_results = {}
-    disagreements = []
+        queue_item = {
+            "sample_id": sample_id,
+            "customer_tweet_id": r.get("customer_tweet_id", ""),
+            "customer_query": query,
+            "predicted_intent": intent_res["predicted_intent"],
+            "calibrated_confidence": intent_res["calibrated_confidence"],
+            "agent_reply": gen_res.reply,
+            "agent_decision": dec.action,
+            "agent_reason_code": dec.reason_code,
+            "retrieved_evidence": [
+                {
+                    "evidence_id": e.get("evidence_id"),
+                    "similarity": e.get("similarity"),
+                    "historical_reply": e.get("historical_brand_reply")
+                }
+                for e in evidence_res
+            ],
+            "judge_scores": judge_dict,
+            "human_scores": human_score,
+            "human_annotator": "",
+            "human_notes": ""
+        }
+        queue_records.append(queue_item)
 
-    all_human_flat = []
-    all_judge_flat = []
+    # Save queue file
+    with open(queue_path, "w", encoding="utf-8") as f:
+        for q in queue_records:
+            f.write(json.dumps(q, ensure_ascii=False) + "\n")
+    print(f"Saved real-data human evaluation queue to {queue_path}")
 
-    for dim in dimensions:
-        h_vals = [h[dim] for h in human_annotations]
-        j_vals = [getattr(j, dim) for j in judge_annotations]
+    # Generate results report
+    reports_dir = project_root / "reports" / "results"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    report_file = reports_dir / "human_vs_judge_agreement.json"
 
-        all_human_flat.extend(h_vals)
-        all_judge_flat.extend(j_vals)
+    if len(human_annotations) == len(sampled_records):
+        # All human annotations provided: compute genuine statistics
+        print("\nAll 50 human annotations provided. Computing genuine statistical agreement...")
+        dimensions = ["correctness", "relevance", "grounding", "completeness", "tone", "unsupported_claims", "escalation_appropriateness"]
+        dim_results = {}
+        for dim in dimensions:
+            j_vals = np.array([j[dim] for j in judge_annotations])
+            h_vals = np.array([h[dim] for h in human_annotations])
+            exact = float(np.mean(j_vals == h_vals))
+            within_1 = float(np.mean(np.abs(j_vals - h_vals) <= 1))
+            mad = float(np.mean(np.abs(j_vals - h_vals)))
+            p_r = float(pearsonr(j_vals, h_vals)[0]) if np.std(j_vals) > 0 and np.std(h_vals) > 0 else 1.0
+            s_rho = float(spearmanr(j_vals, h_vals)[0]) if np.std(j_vals) > 0 and np.std(h_vals) > 0 else 1.0
 
-        diffs = np.abs(np.array(h_vals) - np.array(j_vals))
-        exact_match = float(np.mean(diffs == 0) * 100.0)
-        within_1 = float(np.mean(diffs <= 1) * 100.0)
-        mad = float(np.mean(diffs))
+            dim_results[dim] = {
+                "exact_match": round(exact, 4),
+                "within_1": round(within_1, 4),
+                "mad": round(mad, 4),
+                "pearson_r": round(p_r, 4),
+                "spearman_rho": round(s_rho, 4)
+            }
 
-        # Correlation (protect against zero-variance constant vectors)
-        if np.std(h_vals) > 1e-6 and np.std(j_vals) > 1e-6:
-            spearman_corr, _ = spearmanr(h_vals, j_vals)
-            pearson_corr, _ = pearsonr(h_vals, j_vals)
-        else:
-            spearman_corr = 1.0 if np.all(np.array(h_vals) == np.array(j_vals)) else 0.0
-            pearson_corr = 1.0 if np.all(np.array(h_vals) == np.array(j_vals)) else 0.0
-
-        dim_results[dim] = {
-            "spearman_rho": round(float(spearman_corr), 4),
-            "pearson_r": round(float(pearson_corr), 4),
-            "exact_agreement_pct": round(exact_match, 1),
-            "within_1_agreement_pct": round(within_1, 1),
-            "mean_absolute_difference": round(mad, 4)
+        report_data = {
+            "status": "COMPLETED",
+            "sample_size": len(sampled_records),
+            "completed_human_annotations": len(human_annotations),
+            "dimensions": dim_results
+        }
+    else:
+        # Human annotations pending: DO NOT FABRICATE SCORES
+        print("\nHuman annotations pending. Marking experiment as PENDING_HUMAN_ANNOTATION.")
+        print(f"Completed human annotations: {len(human_annotations)}/{len(sampled_records)}")
+        report_data = {
+            "status": "PENDING_HUMAN_ANNOTATION",
+            "message": "Human vs LLM-as-a-Judge agreement study is queued for human annotation. Zero fabricated scores.",
+            "queue_path": str(queue_path),
+            "sample_size": len(sampled_records),
+            "completed_human_annotations": len(human_annotations),
+            "agreement_metrics": None,
+            "instructions": "To complete, annotate the 50 items in reports/annotations/human_judge_agreement_queue.jsonl with human_scores (1-5 scale) and re-run this script."
         }
 
-        # Track disagreements (|diff| >= 2)
-        for idx, diff in enumerate(diffs):
-            if diff >= 2:
-                disagreements.append({
-                    "sample_id": validation_slice[idx]["id"],
-                    "query": validation_slice[idx]["customer_text"],
-                    "dimension": dim,
-                    "human_score": int(h_vals[idx]),
-                    "judge_score": int(j_vals[idx]),
-                    "difference": int(diff)
-                })
-
-    # Overall aggregate statistics
-    all_diffs = np.abs(np.array(all_human_flat) - np.array(all_judge_flat))
-    overall_exact = float(np.mean(all_diffs == 0) * 100.0)
-    overall_within_1 = float(np.mean(all_diffs <= 1) * 100.0)
-    overall_mad = float(np.mean(all_diffs))
-    overall_spearman, _ = spearmanr(all_human_flat, all_judge_flat)
-    overall_pearson, _ = pearsonr(all_human_flat, all_judge_flat)
-
-    summary_report = {
-        "overall_metrics": {
-            "spearman_rho": round(float(overall_spearman), 4),
-            "pearson_r": round(float(overall_pearson), 4),
-            "exact_agreement_pct": round(overall_exact, 1),
-            "within_1_agreement_pct": round(overall_within_1, 1),
-            "mean_absolute_difference": round(overall_mad, 4),
-            "total_evaluations": len(all_human_flat)
-        },
-        "per_dimension": dim_results,
-        "disagreements_count": len(disagreements),
-        "disagreements_detail": disagreements
-    }
-
-    # Save to reports/results/human_vs_judge_agreement.json
-    out_path = project_root / "reports" / "results" / "human_vs_judge_agreement.json"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(summary_report, f, indent=2)
-    print(f"Saved agreement report to {out_path}")
-
-    # Print summary table
-    print("\n" + "-" * 85)
-    print(f"{'Dimension':<28} {'Spearman rho':<14} {'Exact Match %':<16} {'Within-1 %':<14} {'MAD':<8}")
-    print("-" * 85)
-    for dim, metrics in dim_results.items():
-        print(
-            f"{dim:<28} {metrics['spearman_rho']:<14.4f} {metrics['exact_agreement_pct']:<16.1f} "
-            f"{metrics['within_1_agreement_pct']:<14.1f} {metrics['mean_absolute_difference']:<8.4f}"
-        )
-    print("-" * 85)
-    print(f"{'OVERALL AGGREGATE':<28} {overall_spearman:<14.4f} {overall_exact:<16.1f} {overall_within_1:<14.1f} {overall_mad:<8.4f}")
-    print("-" * 85)
-    print(f"Disagreements (|diff| >= 2): {len(disagreements)}")
+    with open(report_file, "w", encoding="utf-8") as f:
+        json.dump(report_data, f, indent=2)
+    print(f"Saved human-vs-judge report to {report_file}")
     print("=" * 75)
 
 
