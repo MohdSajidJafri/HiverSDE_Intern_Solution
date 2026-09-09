@@ -64,8 +64,8 @@ Evaluated on the frozen silver evaluation benchmark ($N=200$ real customer inqui
 | **Intent Macro F1 (Stratified View)** | 1.6% | 22.1% | **41.4%** |
 | **Intent Accuracy (Natural View)** | 2.9% | 85.5% | **90.2%** |
 | **Intent Weighted F1 (Natural View)** | 0.2% | 81.5% | **89.2%** |
-| **Expected Calibration Error (ECE)** | 0.9150 | 0.0712 | **0.7022** |
-| **Brier Calibration Score** | 1.8300 | 0.6030 | **1.4680** |
+| **Expected Calibration Error (ECE)** | 0.9150 | 0.0712 | **0.0863** |
+| **Brier Calibration Score** | 1.8300 | 0.6030 | **0.4115** |
 | **Safe Auto-Handle Coverage** | 75.0% | 47.5% | **13.5%** |
 | **False Auto-Handle Rate (CRITICAL)** | 25.0% | 4.5% | **1.0%** *(2/200 overall; 0% on sensitive validation)* |
 | **Escalation Rate** | 0.0% | 48.0% | **85.5%** *(Conservative safety posture)* |

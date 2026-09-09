@@ -100,13 +100,14 @@ class EvaluationHarness:
 
         for idx, p in enumerate(predictions):
             intent_dict = p.get("intent", {})
-            if "prob_vector" in intent_dict and len(intent_dict["prob_vector"]) == len(self.intents):
-                probs_matrix[idx, :] = np.array(intent_dict["prob_vector"], dtype=np.float64)
-            elif "calibrated_probabilities" in intent_dict:
+            if "calibrated_probabilities" in intent_dict and intent_dict["calibrated_probabilities"]:
+                # Map probabilities strictly by class name to guarantee index alignment
                 for c_name, prob_val in intent_dict["calibrated_probabilities"].items():
                     c_idx = self.intent_to_idx.get(c_name)
                     if c_idx is not None:
                         probs_matrix[idx, c_idx] = float(prob_val)
+            elif "prob_vector" in intent_dict and len(intent_dict["prob_vector"]) == len(self.intents):
+                probs_matrix[idx, :] = np.array(intent_dict["prob_vector"], dtype=np.float64)
             else:
                 # Direct prediction confidence mapping without fake uniform spread
                 pred_class = intent_dict.get("predicted", "")

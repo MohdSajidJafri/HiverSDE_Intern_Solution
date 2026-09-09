@@ -227,8 +227,8 @@
         ]
       ],
       "calibration": {
-        "expected_calibration_error": 0.7022,
-        "brier_score": 1.4684,
+        "expected_calibration_error": 0.0863,
+        "brier_score": 0.4115,
         "reliability_bins": [
           {
             "bin_index": 0,
@@ -270,9 +270,9 @@
               0.4
             ],
             "bin_size": 7,
-            "bin_accuracy": 0.0,
+            "bin_accuracy": 0.7143,
             "bin_confidence": 0.367,
-            "calibration_gap": 0.367
+            "calibration_gap": 0.3473
           },
           {
             "bin_index": 4,
@@ -281,9 +281,9 @@
               0.5
             ],
             "bin_size": 19,
-            "bin_accuracy": 0.1053,
+            "bin_accuracy": 0.6316,
             "bin_confidence": 0.4564,
-            "calibration_gap": 0.3511
+            "calibration_gap": 0.1752
           },
           {
             "bin_index": 5,
@@ -292,9 +292,9 @@
               0.6
             ],
             "bin_size": 34,
-            "bin_accuracy": 0.0588,
+            "bin_accuracy": 0.4118,
             "bin_confidence": 0.5604,
-            "calibration_gap": 0.5016
+            "calibration_gap": 0.1486
           },
           {
             "bin_index": 6,
@@ -303,9 +303,9 @@
               0.7
             ],
             "bin_size": 25,
-            "bin_accuracy": 0.04,
+            "bin_accuracy": 0.64,
             "bin_confidence": 0.6458,
-            "calibration_gap": 0.6058
+            "calibration_gap": 0.0058
           },
           {
             "bin_index": 7,
@@ -314,9 +314,9 @@
               0.8
             ],
             "bin_size": 21,
-            "bin_accuracy": 0.0,
+            "bin_accuracy": 0.6667,
             "bin_confidence": 0.7667,
-            "calibration_gap": 0.7667
+            "calibration_gap": 0.1001
           },
           {
             "bin_index": 8,
@@ -325,9 +325,9 @@
               0.9
             ],
             "bin_size": 39,
-            "bin_accuracy": 0.0256,
+            "bin_accuracy": 0.7949,
             "bin_confidence": 0.8536,
-            "calibration_gap": 0.8279
+            "calibration_gap": 0.0587
           },
           {
             "bin_index": 9,
@@ -336,9 +336,9 @@
               1.0
             ],
             "bin_size": 54,
-            "bin_accuracy": 0.0185,
+            "bin_accuracy": 0.9815,
             "bin_confidence": 0.9511,
-            "calibration_gap": 0.9325
+            "calibration_gap": 0.0304
           }
         ]
       }
